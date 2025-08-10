@@ -281,32 +281,15 @@ BEGIN
     END LOOP;
 END $policy_cleanup$;
 
--- Create RLS policies for profiles table
+-- Create RLS policies for profiles table (FIXED - no circular references)
 CREATE POLICY "Users can view own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
-
--- Admins can view all profiles
-CREATE POLICY "Admins can view all profiles" ON public.profiles
-    FOR SELECT USING (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
 
 CREATE POLICY "Users can insert own profile" ON public.profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
-
--- Admins can update user profiles (except admin fields)
-CREATE POLICY "Admins can update user profiles" ON public.profiles
-    FOR UPDATE USING (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    )) WITH CHECK (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
 
 CREATE POLICY "Users can delete own profile" ON public.profiles
     FOR DELETE USING (auth.uid() = id);
@@ -358,26 +341,10 @@ CREATE POLICY "Users can insert own community posts" ON public.community_posts
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can update own community posts" ON public.community_posts
-    FOR UPDATE USING (auth.uid() = user_id OR EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
+    FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can delete own community posts" ON public.community_posts
-    FOR DELETE USING (auth.uid() = user_id OR EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
-
--- Admin can pin/unpin posts
-CREATE POLICY "Admins can manage post pinning" ON public.community_posts
-    FOR UPDATE USING (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    )) WITH CHECK (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
+    FOR DELETE USING (auth.uid() = user_id);
 
 -- Create RLS policies for community_comments table
 CREATE POLICY "Users can view all community comments" ON public.community_comments
@@ -387,16 +354,10 @@ CREATE POLICY "Users can insert own community comments" ON public.community_comm
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can update own community comments" ON public.community_comments
-    FOR UPDATE USING (auth.uid() = user_id OR EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
+    FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can delete own community comments" ON public.community_comments
-    FOR DELETE USING (auth.uid() = user_id OR EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
+    FOR DELETE USING (auth.uid() = user_id);
 
 -- Create RLS policies for community_likes table
 CREATE POLICY "Users can view all community likes" ON public.community_likes
@@ -442,12 +403,6 @@ CREATE POLICY "Users can delete own PIN test results" ON public.pin_test_results
 CREATE POLICY "Anyone can view active practice tests" ON public.practice_tests
     FOR SELECT USING (is_active = true);
 
-CREATE POLICY "Admins can manage practice tests" ON public.practice_tests
-    FOR ALL USING (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
-
 -- Create RLS policies for practice_test_registrations table
 CREATE POLICY "Users can view their own registrations" ON public.practice_test_registrations
     FOR SELECT USING (auth.uid() = user_id);
@@ -458,18 +413,6 @@ CREATE POLICY "Users can register for tests" ON public.practice_test_registratio
 CREATE POLICY "Users can update their own registrations" ON public.practice_test_registrations
     FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Admins can view all registrations" ON public.practice_test_registrations
-    FOR SELECT USING (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
-
-CREATE POLICY "Admins can manage all registrations" ON public.practice_test_registrations
-    FOR ALL USING (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
-
 -- Create RLS policies for practice_test_waitlist table
 CREATE POLICY "Users can view their own waitlist entries" ON public.practice_test_waitlist
     FOR SELECT USING (auth.uid() = user_id);
@@ -479,18 +422,6 @@ CREATE POLICY "Users can join waitlists" ON public.practice_test_waitlist
 
 CREATE POLICY "Users can update their own waitlist entries" ON public.practice_test_waitlist
     FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Admins can view all waitlist entries" ON public.practice_test_waitlist
-    FOR SELECT USING (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
-
-CREATE POLICY "Admins can manage all waitlist entries" ON public.practice_test_waitlist
-    FOR ALL USING (EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND is_admin = true
-    ));
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS profiles_id_idx ON public.profiles(id);
