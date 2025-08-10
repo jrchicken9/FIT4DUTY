@@ -193,7 +193,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
           loadUserProfile(session.user.id).catch(err => {
             const errorMessage = err?.message || (typeof err === 'string' ? err : 'Unknown error occurred');
             console.error('Background profile load failed:', errorMessage);
-            console.error('ERROR Error loading profile:', errorMessage);
+            console.error('ERROR Error loading profile:', typeof err === 'object' ? JSON.stringify(err) : errorMessage);
           });
         } else {
           console.log('No user session found');
@@ -255,6 +255,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
             details: error.details,
             hint: error.hint
           });
+          console.error('ERROR Error loading profile:', JSON.stringify(error));
           setAuthState(prev => ({ ...prev, isLoading: false }));
         }
         return;
@@ -275,7 +276,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         stack: error?.stack,
         fullError: error
       });
-      console.error('ERROR Error loading profile:', errorMessage);
+      console.error('ERROR Error loading profile:', typeof error === 'object' ? JSON.stringify(error) : errorMessage);
       setAuthState(prev => ({ ...prev, isLoading: false }));
     }
   };
@@ -754,6 +755,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
           hint: error.hint,
           fullError: error
         });
+        console.error('ERROR Error loading profile:', JSON.stringify(error));
         Alert.alert('Error', `Failed to update profile: ${errorMessage}`);
         return;
       }
@@ -770,6 +772,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         fullError: error,
         type: typeof error
       });
+      console.error('ERROR Error loading profile:', typeof error === 'object' ? JSON.stringify(error) : errorMessage);
       Alert.alert('Error', `Failed to update profile: ${errorMessage}`);
     }
   };

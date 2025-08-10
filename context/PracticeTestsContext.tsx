@@ -86,14 +86,20 @@ export const [PracticeTestsProvider, usePracticeTests] = createContextHook(() =>
 
       if (error) {
         console.error('Error loading practice tests:', error);
+        console.error('ERROR Error loading practice tests:', JSON.stringify(error));
         
         // Handle missing table error specifically
         if (error.code === 'PGRST205' && error.message?.includes('practice_tests')) {
           const setupMessage = 'Database setup required: The practice_tests table does not exist. Please run the SQL setup script in your Supabase dashboard.';
           console.error(setupMessage);
           setError(setupMessage);
+        } else if (error.code === '42P01') {
+          const setupMessage = 'Database setup required: Please run the SQL setup script in your Supabase dashboard to create the required tables.';
+          console.error(setupMessage);
+          setError(setupMessage);
         } else {
-          setError(error.message || 'Failed to load practice tests');
+          const errorMessage = error.message || error.details || error.hint || 'Failed to load practice tests';
+          setError(errorMessage);
         }
         return;
       }
@@ -102,7 +108,8 @@ export const [PracticeTestsProvider, usePracticeTests] = createContextHook(() =>
       setPracticeTests(data || []);
     } catch (err: any) {
       console.error('Error loading practice tests:', err);
-      const errorMessage = typeof err === 'string' ? err : err?.message || 'Failed to load practice tests';
+      console.error('ERROR Error loading practice tests:', typeof err === 'object' ? JSON.stringify(err) : err);
+      const errorMessage = typeof err === 'string' ? err : err?.message || err?.details || err?.hint || 'Failed to load practice tests';
       setError(errorMessage);
     }
   }, []);

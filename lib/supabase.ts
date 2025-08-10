@@ -64,6 +64,20 @@ const supabaseOptions = {
 
 export const supabase = createClient(finalUrl, finalKey, supabaseOptions);
 
+// Initialize database tables check on startup
+if (typeof window !== 'undefined') {
+  // Only run in browser environment
+  setTimeout(() => {
+    testDatabaseTables().then(result => {
+      if (!result.success) {
+        console.warn('Database setup check:', result.error);
+      }
+    }).catch(err => {
+      console.warn('Database setup check failed:', err.message);
+    });
+  }, 2000);
+}
+
 // Test connection function
 export const testConnection = async () => {
   try {
@@ -108,6 +122,47 @@ export const testConnection = async () => {
     }
     
     return { success: false, error: errorMessage };
+  }
+};
+
+// Test database tables function
+export const testDatabaseTables = async () => {
+  try {
+    console.log('Testing database tables...');
+    
+    // Test if profiles table exists
+    const { error: profilesError } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+    
+    if (profilesError && profilesError.code === '42P01') {
+      return { 
+        success: false, 
+        error: 'Database tables not found. Please run the SQL setup script in your Supabase dashboard.',
+        missingTables: ['profiles']
+      };
+    }
+    
+    // Test if practice_tests table exists
+    const { error: practiceTestsError } = await supabase
+      .from('practice_tests')
+      .select('id')
+      .limit(1);
+    
+    if (practiceTestsError && practiceTestsError.code === '42P01') {
+      return { 
+        success: false, 
+        error: 'Practice tests table not found. Please run the SQL setup script in your Supabase dashboard.',
+        missingTables: ['practice_tests']
+      };
+    }
+    
+    console.log('Database tables test successful');
+    return { success: true, data: { profilesExists: !profilesError, practiceTestsExists: !practiceTestsError } };
+  } catch (error: any) {
+    console.error('Database tables test error:', error);
+    return { success: false, error: error.message || 'Failed to test database tables' };
   }
 };
 
