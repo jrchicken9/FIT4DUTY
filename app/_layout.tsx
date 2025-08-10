@@ -47,6 +47,12 @@ function RootLayoutNav() {
       <Stack.Screen name="workout/session/[id]" options={{ title: "Workout Session" }} />
       <Stack.Screen name="workout/shuttle-run" options={{ title: "Shuttle Run" }} />
       <Stack.Screen name="profile-completion" options={{ title: "Complete Profile" }} />
+      <Stack.Screen name="admin/dashboard" options={{ title: "Admin Dashboard" }} />
+      <Stack.Screen name="admin/users" options={{ title: "User Management" }} />
+      <Stack.Screen name="admin/community" options={{ title: "Community Management" }} />
+      <Stack.Screen name="admin/analytics" options={{ title: "Analytics" }} />
+      <Stack.Screen name="admin/settings" options={{ title: "System Settings" }} />
+      <Stack.Screen name="practice-tests" options={{ title: "Practice Tests" }} />
     </Stack>
   );
 }

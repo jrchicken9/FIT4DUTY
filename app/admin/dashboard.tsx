@@ -143,6 +143,13 @@ export default function AdminDashboard() {
             </Text>
           </View>
           <Text style={styles.welcomeText}>Welcome, {user?.full_name}</Text>
+          
+          <TouchableOpacity 
+            style={styles.backToAppButton}
+            onPress={() => router.push('/(tabs)/dashboard')}
+          >
+            <Text style={styles.backToAppText}>Back to Main App</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Stats Cards */}
@@ -412,5 +419,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  backToAppButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 12,
+  },
+  backToAppText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

@@ -15,14 +15,20 @@ import Logo from '@/components/Logo';
 import { useAuth } from '@/context/AuthContext';
 
 export default function WelcomeScreen() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isSuperAdmin } = useAuth();
 
   useEffect(() => {
     if (!isLoading && user) {
-      // User is authenticated, redirect to main app
-      router.replace('/(tabs)/dashboard');
+      // Check if user is super admin and redirect accordingly
+      if (isSuperAdmin()) {
+        console.log('Super admin detected, redirecting to admin dashboard');
+        router.replace('/admin/dashboard');
+      } else {
+        // Regular user, redirect to main app
+        router.replace('/(tabs)/dashboard');
+      }
     }
-  }, [user, isLoading]);
+  }, [user, isLoading, isSuperAdmin]);
 
   if (isLoading) {
     return (

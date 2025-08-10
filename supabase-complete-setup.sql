@@ -285,14 +285,44 @@ END $policy_cleanup$;
 CREATE POLICY "Users can view own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
 
+-- Admin policy to view all profiles
+CREATE POLICY "Admins can view all profiles" ON public.profiles
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles p 
+            WHERE p.id = auth.uid() 
+            AND (p.is_admin = true OR p.role IN ('admin', 'super_admin'))
+        )
+    );
+
 CREATE POLICY "Users can insert own profile" ON public.profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
+-- Admin policy to update any profile
+CREATE POLICY "Super admins can update any profile" ON public.profiles
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles p 
+            WHERE p.id = auth.uid() 
+            AND p.role = 'super_admin'
+        )
+    );
+
 CREATE POLICY "Users can delete own profile" ON public.profiles
     FOR DELETE USING (auth.uid() = id);
+
+-- Admin policy to delete any profile
+CREATE POLICY "Super admins can delete any profile" ON public.profiles
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles p 
+            WHERE p.id = auth.uid() 
+            AND p.role = 'super_admin'
+        )
+    );
 
 -- Create RLS policies for workouts table
 CREATE POLICY "Users can view own workouts" ON public.workouts
