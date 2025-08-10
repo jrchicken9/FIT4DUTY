@@ -281,37 +281,22 @@ BEGIN
     END LOOP;
 END $policy_cleanup$;
 
--- Create RLS policies for profiles table (FIXED - no circular references)
+-- Create SIMPLIFIED RLS policies for profiles table (NO CIRCULAR REFERENCES)
+-- Users can view their own profile
 CREATE POLICY "Users can view own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
 
--- Admin policy to view all profiles (simplified to avoid recursion)
-CREATE POLICY "Admins can view all profiles" ON public.profiles
-    FOR SELECT USING (
-        (auth.jwt() ->> 'role')::text IN ('admin', 'super_admin') OR
-        (auth.jwt() ->> 'is_admin')::boolean = true
-    );
-
+-- Users can insert their own profile
 CREATE POLICY "Users can insert own profile" ON public.profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
 
+-- Users can update their own profile
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
--- Admin policy to update any profile (simplified to avoid recursion)
-CREATE POLICY "Super admins can update any profile" ON public.profiles
-    FOR UPDATE USING (
-        (auth.jwt() ->> 'role')::text = 'super_admin'
-    );
-
+-- Users can delete their own profile
 CREATE POLICY "Users can delete own profile" ON public.profiles
     FOR DELETE USING (auth.uid() = id);
-
--- Admin policy to delete any profile (simplified to avoid recursion)
-CREATE POLICY "Super admins can delete any profile" ON public.profiles
-    FOR DELETE USING (
-        (auth.jwt() ->> 'role')::text = 'super_admin'
-    );
 
 -- Create RLS policies for workouts table
 CREATE POLICY "Users can view own workouts" ON public.workouts
