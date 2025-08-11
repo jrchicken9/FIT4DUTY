@@ -2,13 +2,13 @@ import { createClient, AuthFlowType } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// Supabase configuration - using environment variables with fallbacks
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://jgkgdfohqihwojbsplab.supabase.co';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impna2dkZm9ocWlod29qYnNwbGFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzOTA5ODYsImV4cCI6MjA2OTk2Njk4Nn0.1uIE9x0yg6TsxNKf0gTxRs4sZjb0e2RBfwm8-Joe_pE';
+// Get environment variables
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Use the configuration
-const finalUrl = supabaseUrl;
-const finalKey = supabaseAnonKey;
+// Fallback to hardcoded values if env vars are not available
+const finalUrl = supabaseUrl || 'https://jgkgdfohqihwojbsplab.supabase.co';
+const finalKey = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impna2dkZm9ocWlod29qYnNwbGFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzOTA5ODYsImV4cCI6MjA2OTk2Njk4Nn0.1uIE9x0yg6TsxNKf0gTxRs4sZjb0e2RBfwm8-Joe_pE';
 
 console.log('Supabase config:', {
   hasUrl: !!finalUrl,

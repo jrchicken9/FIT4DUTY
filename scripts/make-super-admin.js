@@ -3,9 +3,9 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-// Your Supabase credentials (updated to match current environment)
-const supabaseUrl = 'https://jgkgdfohqihwojbsplab.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impna2dkZm9ocWlod29qYnNwbGFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzOTA5ODYsImV4cCI6MjA2OTk2Njk4Nn0.1uIE9x0yg6TsxNKf0gTxRs4sZjb0e2RBfwm8-Joe_pE';
+// Your Supabase credentials (replace with your actual values)
+const supabaseUrl = 'https://hdhephqdfgbtoupnewyz.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkaGVwaHFkZmdidG91cG5ld3l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MDg1MDYsImV4cCI6MjA2OTk4NDUwNn0.Pyl9S7YNjk-XLK2cX8Rd2MtA3IhRRrIQHTtZimsVc1Q';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -52,8 +52,8 @@ async function makeSuperAdmin(email) {
   }
 }
 
-// Usage: Replace 'ih.gaming009@gmail.com' with the email you want to make super admin
-const email = 'ih.gaming009@gmail.com';
+// Usage: Replace 'ih.haddad009@gmail.com' with the email you want to make super admin
+const email = 'ih.haddad009@gmail.com';
 
 console.log('🔐 Making Super Admin Script');
 console.log('============================');

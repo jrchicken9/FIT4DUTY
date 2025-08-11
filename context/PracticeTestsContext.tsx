@@ -97,11 +97,6 @@ export const [PracticeTestsProvider, usePracticeTests] = createContextHook(() =>
           const setupMessage = 'Database setup required: Please run the SQL setup script in your Supabase dashboard to create the required tables.';
           console.error(setupMessage);
           setError(setupMessage);
-        } else if (error.message?.includes('Failed to fetch') || error.message?.includes('Load failed')) {
-          // Network connection issues - provide fallback data
-          console.log('Network error detected, using fallback data');
-          setPracticeTests([]);
-          setError('Unable to connect to server. Please check your internet connection.');
         } else {
           const errorMessage = error.message || error.details || error.hint || 'Failed to load practice tests';
           setError(errorMessage);
@@ -111,20 +106,11 @@ export const [PracticeTestsProvider, usePracticeTests] = createContextHook(() =>
 
       console.log('Practice tests loaded:', data?.length || 0);
       setPracticeTests(data || []);
-      setError(null); // Clear any previous errors
     } catch (err: any) {
       console.error('Error loading practice tests:', err);
       console.error('ERROR Error loading practice tests:', typeof err === 'object' ? JSON.stringify(err) : err);
-      
-      // Handle network errors gracefully
-      if (err?.message?.includes('Failed to fetch') || err?.message?.includes('Load failed') || err?.name === 'TypeError') {
-        console.log('Network error in catch block, using fallback data');
-        setPracticeTests([]);
-        setError('Unable to connect to server. Please check your internet connection.');
-      } else {
-        const errorMessage = typeof err === 'string' ? err : err?.message || err?.details || err?.hint || 'Failed to load practice tests';
-        setError(errorMessage);
-      }
+      const errorMessage = typeof err === 'string' ? err : err?.message || err?.details || err?.hint || 'Failed to load practice tests';
+      setError(errorMessage);
     }
   }, []);
 
