@@ -224,27 +224,15 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     try {
       console.log(`Loading profile for user: ${userId} (attempt ${retryCount + 1})`);
       
-      // Use a simpler query to avoid circular policy issues
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select(`
-          id, email, full_name, avatar_url,
-          phone, date_of_birth, gender, height, weight, location,
-          emergency_contact, emergency_phone, goal, target_test_date,
-          department_interest, experience_level, motivation, has_experience,
-          previous_training, current_fitness_level, workout_frequency,
-          available_time, injuries, medical_conditions, prep_circuit_level,
-          shuttle_run_level, push_ups_max, sit_reach_distance, mile_run_time,
-          core_endurance_time, back_extension_time, role, is_admin,
-          admin_permissions, fitness_level, goals, created_at, updated_at
-        `)
+        .select('*')
         .eq('id', userId)
         .single();
 
       if (error) {
         // PGRST116 = no rows returned (profile doesn't exist yet)
         // 42P01 = table doesn't exist
-        // 42P17 = infinite recursion in policy
         if (error.code === 'PGRST116') {
           console.log('Profile not found for user:', userId);
           
@@ -260,10 +248,6 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         } else if (error.code === '42P01') {
           console.log('Profiles table does not exist yet. Please run the SQL setup.');
           setAuthState(prev => ({ ...prev, isLoading: false }));
-        } else if (error.code === '42P17') {
-          console.error('Infinite recursion detected in RLS policy. This indicates a database configuration issue.');
-          console.error('Please check your RLS policies in Supabase and ensure they don\'t reference themselves.');
-          setAuthState(prev => ({ ...prev, isLoading: false }));
         } else {
           console.error('Error loading profile:', {
             message: error.message,
@@ -271,14 +255,14 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
             details: error.details,
             hint: error.hint
           });
-          console.error('ERROR Error loading profile:', typeof error === 'object' ? JSON.stringify(error) : error);
+          console.error('ERROR Error loading profile:', JSON.stringify(error));
           setAuthState(prev => ({ ...prev, isLoading: false }));
         }
         return;
       }
 
       if (profile) {
-        console.log('Profile loaded successfully:', profile.full_name, 'Role:', profile.role);
+        console.log('Profile loaded successfully:', profile.full_name);
         setAuthState(prev => ({ ...prev, user: profile, isLoading: false }));
       } else {
         console.log('No profile data returned');
@@ -771,7 +755,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
           hint: error.hint,
           fullError: error
         });
-        console.error('ERROR Error loading profile:', typeof error === 'object' ? JSON.stringify(error) : error);
+        console.error('ERROR Error loading profile:', JSON.stringify(error));
         Alert.alert('Error', `Failed to update profile: ${errorMessage}`);
         return;
       }
@@ -901,14 +885,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     }
 
     try {
-      // Use explicit column selection to avoid policy issues
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          id, email, full_name, avatar_url, role, is_admin, admin_permissions,
-          experience_level, current_fitness_level, goal, department_interest,
-          created_at, updated_at
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {

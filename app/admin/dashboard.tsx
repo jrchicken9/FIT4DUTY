@@ -6,109 +6,137 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  RefreshControl,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
-import { useAuth, type User, type UserRole, type AdminPermission } from '@/context/AuthContext';
-import { Users, Settings, BarChart3, MessageSquare, Shield, Crown } from 'lucide-react-native';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import Colors from '@/constants/colors';
 
-type AdminStats = {
+type DashboardStats = {
   totalUsers: number;
-  newUsersThisWeek: number;
+  totalWorkouts: number;
+  totalTests: number;
   totalPosts: number;
-  totalTestResults: number;
 };
 
 export default function AdminDashboard() {
-  const { user, isAdmin, isSuperAdmin, hasPermission, getAllUsers } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
-  const [stats, setStats] = useState<AdminStats>({
+  const { user, isAdmin, isSuperAdmin, signOut } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
-    newUsersThisWeek: 0,
+    totalWorkouts: 0,
+    totalTests: 0,
     totalPosts: 0,
-    totalTestResults: 0,
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  // Check admin access
   useEffect(() => {
-    if (!isAdmin()) {
-      Alert.alert('Access Denied', 'You do not have admin privileges.');
-      router.back();
+    if (!user) {
+      Alert.alert('Access Denied', 'You must be logged in to access this page.');
+      router.replace('/auth/sign-in');
       return;
     }
-    
-    loadData();
-  }, []);
 
-  const loadData = async () => {
+    if (!isAdmin()) {
+      Alert.alert('Access Denied', 'You must be an admin to access this page.');
+      router.replace('/');
+      return;
+    }
+  }, [user, isAdmin]);
+
+  const loadStats = async () => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       
-      const result = await getAllUsers();
-      if (result.success && result.data) {
-        setUsers(result.data);
-        
-        // Calculate stats
-        const now = new Date();
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        
-        const newUsersThisWeek = result.data.filter(
-          (u: User) => new Date(u.created_at) > weekAgo
-        ).length;
-        
-        setStats({
-          totalUsers: result.data.length,
-          newUsersThisWeek,
-          totalPosts: 0, // TODO: Implement when community is ready
-          totalTestResults: 0, // TODO: Implement when test results are ready
-        });
-      }
-    } catch (error) {
-      console.error('Error loading admin data:', error);
-      Alert.alert('Error', 'Failed to load admin data');
+      // Load all stats in parallel
+      const [usersResult, workoutsResult, testsResult, postsResult] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact' }),
+        supabase.from('workouts').select('id', { count: 'exact' }),
+        supabase.from('fitness_tests').select('id', { count: 'exact' }),
+        supabase.from('community_posts').select('id', { count: 'exact' }),
+      ]);
+
+      setStats({
+        totalUsers: usersResult.count || 0,
+        totalWorkouts: workoutsResult.count || 0,
+        totalTests: testsResult.count || 0,
+        totalPosts: postsResult.count || 0,
+      });
+    } catch (error: any) {
+      console.error('Error loading stats:', error);
+      Alert.alert('Error', 'Failed to load dashboard statistics');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
-  };
-
-  const getRoleColor = (role: UserRole) => {
-    switch (role) {
-      case 'super_admin':
-        return '#FF6B6B';
-      case 'admin':
-        return '#4ECDC4';
-      default:
-        return '#95A5A6';
+  useEffect(() => {
+    if (isAdmin()) {
+      loadStats();
     }
+  }, [isAdmin]);
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+            router.replace('/');
+          },
+        },
+      ]
+    );
   };
 
-  const getRoleIcon = (role: UserRole) => {
-    switch (role) {
-      case 'super_admin':
-        return Crown;
-      case 'admin':
-        return Shield;
-      default:
-        return Users;
-    }
-  };
+  const StatCard = ({ title, value, color, onPress }: {
+    title: string;
+    value: number;
+    color: string;
+    onPress?: () => void;
+  }) => (
+    <TouchableOpacity
+      style={[styles.statCard, { borderLeftColor: color }, onPress && styles.clickableCard]}
+      onPress={onPress}
+      disabled={!onPress}
+    >
+      <Text style={styles.statValue}>{value.toLocaleString()}</Text>
+      <Text style={styles.statTitle}>{title}</Text>
+    </TouchableOpacity>
+  );
 
-  if (isLoading) {
+  const AdminAction = ({ title, description, icon, onPress, color }: {
+    title: string;
+    description: string;
+    icon: string;
+    onPress: () => void;
+    color: string;
+  }) => (
+    <TouchableOpacity style={[styles.actionCard, { borderLeftColor: color }]} onPress={onPress}>
+      <View style={styles.actionContent}>
+        <Text style={styles.actionIcon}>{icon}</Text>
+        <View style={styles.actionText}>
+          <Text style={styles.actionTitle}>{title}</Text>
+          <Text style={styles.actionDescription}>{description}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  if (!isAdmin()) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ title: 'Admin Dashboard' }} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Loading admin dashboard...</Text>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Checking permissions...</Text>
         </View>
       </SafeAreaView>
     );
@@ -116,147 +144,124 @@ export default function AdminDashboard() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          title: 'Admin Dashboard',
-          headerStyle: { backgroundColor: '#1a1a1a' },
-          headerTintColor: '#fff',
-        }} 
-      />
-      
-      <ScrollView 
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Admin Info */}
-        <View style={styles.adminInfo}>
-          <View style={styles.adminBadge}>
-            {isSuperAdmin() ? (
-              <Crown size={20} color="#FFD700" />
-            ) : (
-              <Shield size={20} color="#4ECDC4" />
-            )}
-            <Text style={styles.adminRole}>
-              {isSuperAdmin() ? 'Super Admin' : 'Admin'}
+      <Stack.Screen options={{ title: 'Admin Dashboard' }} />
+
+      <ScrollView style={styles.content}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.welcomeText}>Welcome back,</Text>
+            <Text style={styles.userName}>{user?.full_name || user?.email}</Text>
+            <Text style={styles.userRole}>
+              {isSuperAdmin() ? 'Super Administrator' : 'Administrator'}
             </Text>
           </View>
-          <Text style={styles.welcomeText}>Welcome, {user?.full_name}</Text>
-          
-          <TouchableOpacity 
-            style={styles.backToAppButton}
-            onPress={() => router.push('/(tabs)/dashboard')}
-          >
-            <Text style={styles.backToAppText}>Back to Main App</Text>
+          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+            <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Users size={24} color="#007AFF" />
-            <Text style={styles.statNumber}>{stats.totalUsers}</Text>
-            <Text style={styles.statLabel}>Total Users</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <BarChart3 size={24} color="#34C759" />
-            <Text style={styles.statNumber}>{stats.newUsersThisWeek}</Text>
-            <Text style={styles.statLabel}>New This Week</Text>
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          
-          <TouchableOpacity 
-            style={styles.actionCard}
-            onPress={() => router.push('/admin/users')}
-          >
-            <Users size={24} color="#007AFF" />
-            <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Manage Users</Text>
-              <Text style={styles.actionDescription}>
-                View, edit, and manage user accounts
-              </Text>
+        <View style={styles.statsSection}>
+          <Text style={styles.sectionTitle}>Platform Statistics</Text>
+          {loading ? (
+            <View style={styles.statsLoading}>
+              <ActivityIndicator size="small" color={Colors.primary} />
+              <Text style={styles.loadingText}>Loading stats...</Text>
             </View>
-          </TouchableOpacity>
+          ) : (
+            <View style={styles.statsGrid}>
+              <StatCard
+                title="Total Users"
+                value={stats.totalUsers}
+                color="#007AFF"
+                onPress={isSuperAdmin() ? () => router.push('/admin/users') : undefined}
+              />
+              <StatCard
+                title="Workouts"
+                value={stats.totalWorkouts}
+                color="#34C759"
+              />
+              <StatCard
+                title="Fitness Tests"
+                value={stats.totalTests}
+                color="#FF9500"
+              />
+              <StatCard
+                title="Community Posts"
+                value={stats.totalPosts}
+                color="#AF52DE"
+              />
+            </View>
+          )}
+        </View>
 
-          {hasPermission('manage_community') && (
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => router.push('/admin/community')}
-            >
-              <MessageSquare size={24} color="#FF9500" />
-              <View style={styles.actionContent}>
-                <Text style={styles.actionTitle}>Community Management</Text>
-                <Text style={styles.actionDescription}>
-                  Moderate posts and manage community content
-                </Text>
-              </View>
-            </TouchableOpacity>
+        <View style={styles.actionsSection}>
+          <Text style={styles.sectionTitle}>Admin Actions</Text>
+          
+          {isSuperAdmin() && (
+            <AdminAction
+              title="User Management"
+              description="Manage user accounts, roles, and permissions"
+              icon="👥"
+              color="#007AFF"
+              onPress={() => router.push('/admin/users')}
+            />
           )}
 
-          {hasPermission('view_analytics') && (
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => router.push('/admin/analytics')}
-            >
-              <BarChart3 size={24} color="#34C759" />
-              <View style={styles.actionContent}>
-                <Text style={styles.actionTitle}>Analytics</Text>
-                <Text style={styles.actionDescription}>
-                  View app usage and performance metrics
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
+          <AdminAction
+            title="Content Management"
+            description="Manage workouts, exercises, and fitness content"
+            icon="💪"
+            color="#34C759"
+            onPress={() => Alert.alert('Coming Soon', 'Content management will be available soon!')}
+          />
+
+          <AdminAction
+            title="Analytics"
+            description="View platform analytics and user insights"
+            icon="📊"
+            color="#FF9500"
+            onPress={() => Alert.alert('Coming Soon', 'Analytics will be available soon!')}
+          />
+
+          <AdminAction
+            title="Community Management"
+            description="Moderate community posts and discussions"
+            icon="💬"
+            color="#AF52DE"
+            onPress={() => Alert.alert('Coming Soon', 'Community management will be available soon!')}
+          />
 
           {isSuperAdmin() && (
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => router.push('/admin/settings')}
-            >
-              <Settings size={24} color="#FF3B30" />
-              <View style={styles.actionContent}>
-                <Text style={styles.actionTitle}>System Settings</Text>
-                <Text style={styles.actionDescription}>
-                  Configure app settings and permissions
-                </Text>
-              </View>
-            </TouchableOpacity>
+            <AdminAction
+              title="System Settings"
+              description="Configure system-wide settings and preferences"
+              icon="⚙️"
+              color="#FF3B30"
+              onPress={() => Alert.alert('Coming Soon', 'System settings will be available soon!')}
+            />
           )}
         </View>
 
-        {/* Recent Users */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Users</Text>
-          {users.slice(0, 5).map((u) => {
-            const RoleIcon = getRoleIcon(u.role);
-            return (
-              <View key={u.id} style={styles.userCard}>
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{u.full_name || u.email}</Text>
-                  <Text style={styles.userEmail}>{u.email}</Text>
-                  <Text style={styles.userDate}>
-                    Joined {new Date(u.created_at).toLocaleDateString()}
-                  </Text>
-                </View>
-                <View style={[styles.roleIndicator, { backgroundColor: getRoleColor(u.role) }]}>
-                  <RoleIcon size={16} color="white" />
-                </View>
-              </View>
-            );
-          })}
+        <View style={styles.quickActionsSection}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
           
-          <TouchableOpacity 
-            style={styles.viewAllButton}
-            onPress={() => router.push('/admin/users')}
-          >
-            <Text style={styles.viewAllText}>View All Users</Text>
-          </TouchableOpacity>
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              onPress={() => router.push('/')}
+            >
+              <Text style={styles.quickActionIcon}>🏠</Text>
+              <Text style={styles.quickActionText}>Go to Main App</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              onPress={() => router.push('/(tabs)/dashboard')}
+            >
+              <Text style={styles.quickActionIcon}>📱</Text>
+              <Text style={styles.quickActionText}>User Dashboard</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -266,170 +271,159 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: Colors.background,
   },
-  loadingContainer: {
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 50,
   },
   loadingText: {
-    marginTop: 16,
+    marginTop: 10,
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
   },
-  scrollView: {
-    flex: 1,
-  },
-  adminInfo: {
-    backgroundColor: '#1a1a1a',
-    padding: 20,
-    alignItems: 'center',
-  },
-  adminBadge: {
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 8,
-  },
-  adminRole: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 6,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 30,
   },
   welcomeText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 16,
+    color: Colors.textSecondary,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statNumber: {
+  userName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginTop: 8,
+    color: Colors.text,
+    marginBottom: 4,
   },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
+  userRole: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '600',
   },
-  section: {
-    padding: 16,
+  signOutButton: {
+    backgroundColor: '#dc3545',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  signOutText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  statsSection: {
+    marginBottom: 30,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 16,
+    color: Colors.text,
+    marginBottom: 15,
   },
-  actionCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
+  statsLoading: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 10,
+    paddingVertical: 20,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: Colors.surface,
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  clickableCard: {
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  statTitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  actionsSection: {
+    marginBottom: 30,
+  },
+  actionCard: {
+    backgroundColor: Colors.surface,
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 12,
   },
   actionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionIcon: {
+    fontSize: 24,
+    marginRight: 16,
+  },
+  actionText: {
     flex: 1,
-    marginLeft: 16,
   },
   actionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: Colors.text,
+    marginBottom: 4,
   },
   actionDescription: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+    color: Colors.textSecondary,
   },
-  userCard: {
-    backgroundColor: '#fff',
+  quickActionsSection: {
+    marginBottom: 30,
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickActionButton: {
+    flex: 1,
+    backgroundColor: Colors.surface,
     padding: 16,
     borderRadius: 12,
-    flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  quickActionIcon: {
+    fontSize: 24,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
   },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  userEmail: {
+  quickActionText: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  userDate: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-  },
-  roleIndicator: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  viewAllButton: {
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  viewAllText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  backToAppButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 12,
-  },
-  backToAppText: {
-    color: '#fff',
-    fontSize: 14,
+    color: Colors.text,
     fontWeight: '500',
+    textAlign: 'center',
   },
 });

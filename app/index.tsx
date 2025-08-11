@@ -15,18 +15,21 @@ import Logo from '@/components/Logo';
 import { useAuth } from '@/context/AuthContext';
 
 export default function WelcomeScreen() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isSuperAdmin } = useAuth();
 
   useEffect(() => {
     if (!isLoading && user) {
-      console.log('User authenticated:', user.email, 'Role:', user.role, 'Is Admin:', user.is_admin);
+      console.log('User authenticated:', {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        is_admin: user.is_admin,
+        admin_permissions: user.admin_permissions
+      });
       
       // Check if user is super admin and redirect accordingly
-      if (user.role === 'super_admin' && user.is_admin === true) {
+      if (isSuperAdmin()) {
         console.log('Super admin detected, redirecting to admin dashboard');
-        router.replace('/admin/dashboard');
-      } else if (user.role === 'admin' && user.is_admin === true) {
-        console.log('Admin detected, redirecting to admin dashboard');
         router.replace('/admin/dashboard');
       } else {
         // Regular user, redirect to main app
@@ -34,9 +37,21 @@ export default function WelcomeScreen() {
         router.replace('/(tabs)/dashboard');
       }
     } else if (!isLoading && !user) {
-      console.log('No user authenticated, staying on welcome screen');
+      console.log('No user authenticated, showing welcome screen');
     }
-  }, [user, isLoading]);
+  }, [user, isLoading, isSuperAdmin]);
+
+  // Add a fallback redirect in case the main redirect fails
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (!isLoading && user && isSuperAdmin()) {
+        console.log('Fallback redirect for super admin');
+        router.replace('/admin/dashboard');
+      }
+    }, 2000);
+
+    return () => clearTimeout(timeoutId);
+  }, [user, isLoading, isSuperAdmin]);
 
   if (isLoading) {
     return (
