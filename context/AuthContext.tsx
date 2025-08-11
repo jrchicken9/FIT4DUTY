@@ -248,6 +248,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         } else if (error.code === '42P01') {
           console.log('Profiles table does not exist yet. Please run the SQL setup.');
           setAuthState(prev => ({ ...prev, isLoading: false }));
+        } else if (error.message?.includes('Failed to fetch') || error.message?.includes('Load failed')) {
+          console.log('Network error loading profile, continuing without profile data');
+          setAuthState(prev => ({ ...prev, isLoading: false }));
         } else {
           console.error('Error loading profile:', {
             message: error.message,
@@ -270,14 +273,21 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
     } catch (error: any) {
       const errorMessage = error?.message || (typeof error === 'string' ? error : 'Unknown error occurred');
-      console.error('Error loading profile:', {
-        message: errorMessage,
-        name: error?.name,
-        stack: error?.stack,
-        fullError: error
-      });
-      console.error('ERROR Error loading profile:', typeof error === 'object' ? JSON.stringify(error) : errorMessage);
-      setAuthState(prev => ({ ...prev, isLoading: false }));
+      
+      // Handle network errors gracefully
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('Load failed') || error?.name === 'TypeError') {
+        console.log('Network error in profile loading catch block, continuing without profile');
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+      } else {
+        console.error('Error loading profile:', {
+          message: errorMessage,
+          name: error?.name,
+          stack: error?.stack,
+          fullError: error
+        });
+        console.error('ERROR Error loading profile:', typeof error === 'object' ? JSON.stringify(error) : errorMessage);
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+      }
     }
   };
 
