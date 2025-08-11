@@ -15,20 +15,28 @@ import Logo from '@/components/Logo';
 import { useAuth } from '@/context/AuthContext';
 
 export default function WelcomeScreen() {
-  const { user, isLoading, isSuperAdmin } = useAuth();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isLoading && user) {
+      console.log('User authenticated:', user.email, 'Role:', user.role, 'Is Admin:', user.is_admin);
+      
       // Check if user is super admin and redirect accordingly
-      if (isSuperAdmin()) {
+      if (user.role === 'super_admin' && user.is_admin === true) {
         console.log('Super admin detected, redirecting to admin dashboard');
+        router.replace('/admin/dashboard');
+      } else if (user.role === 'admin' && user.is_admin === true) {
+        console.log('Admin detected, redirecting to admin dashboard');
         router.replace('/admin/dashboard');
       } else {
         // Regular user, redirect to main app
+        console.log('Regular user detected, redirecting to main dashboard');
         router.replace('/(tabs)/dashboard');
       }
+    } else if (!isLoading && !user) {
+      console.log('No user authenticated, staying on welcome screen');
     }
-  }, [user, isLoading, isSuperAdmin]);
+  }, [user, isLoading]);
 
   if (isLoading) {
     return (
