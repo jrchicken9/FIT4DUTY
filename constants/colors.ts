@@ -1,4 +1,4 @@
-export default {
+const Colors = {
   primary: "#1E3A8A", // Dark blue (police blue)
   secondary: "#0EA5E9", // Lighter blue for accents
   accent: "#F97316", // Orange for highlights and CTAs
@@ -25,4 +25,6 @@ export default {
     800: "#1E293B",
     900: "#0F172A",
   },
-};
+} as const;
+
+export default Colors;
