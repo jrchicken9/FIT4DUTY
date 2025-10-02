@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
+import AdminHeader from '@/components/AdminHeader';
 import {
   Plus,
   Calendar,
@@ -28,7 +29,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { usePracticeSessions } from '@/context/PracticeSessionsContext';
 import { useAuth } from '@/context/AuthContext';
-import type { TestType, SessionStatus } from '@/types/practice-sessions';
+import type { TestType, SessionStatus, PracticeSession } from '@/types/practice-sessions';
 
 export default function AdminPracticeSessionsScreen() {
   const { user, isAdmin } = useAuth();
@@ -135,7 +136,7 @@ export default function AdminPracticeSessionsScreen() {
   };
 
   // Filter sessions
-  const filteredSessions = sessions.filter(session => {
+  const filteredSessions = sessions.filter((session: PracticeSession) => {
     if (statusFilter !== 'all' && session.status !== statusFilter) return false;
     if (testTypeFilter !== 'all' && session.test_type !== testTypeFilter) return false;
     return true;
@@ -143,7 +144,7 @@ export default function AdminPracticeSessionsScreen() {
 
   // Get booking count for a session
   const getBookingCount = (sessionId: string) => {
-    return bookings.filter(booking => booking.session_id === sessionId).length;
+    return bookings.filter((booking: any) => booking.session_id === sessionId).length;
   };
 
   if (!isAdmin()) {
@@ -162,28 +163,18 @@ export default function AdminPracticeSessionsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          title: 'Practice Sessions Management',
-          headerLeft: () => (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Text style={styles.backButtonText}>← Back</Text>
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={() => setShowFilters(!showFilters)}
-              >
-                <Filter size={20} color={Colors.primary} />
-              </TouchableOpacity>
-            </View>
-          ),
-        }} 
+      <Stack.Screen options={{ headerShown: false }} />
+      <AdminHeader 
+        title="Practice Sessions Management" 
+        backTo="/admin/dashboard"
+        rightContent={(
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={20} color={Colors.white} />
+          </TouchableOpacity>
+        )}
       />
 
       <ScrollView
@@ -253,7 +244,7 @@ export default function AdminPracticeSessionsScreen() {
           </View>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryNumber}>
-              {sessions.filter(s => s.status === 'scheduled').length}
+              {sessions.filter((s: PracticeSession) => s.status === 'scheduled').length}
             </Text>
             <Text style={styles.summaryLabel}>Scheduled</Text>
           </View>
@@ -276,7 +267,7 @@ export default function AdminPracticeSessionsScreen() {
             </TouchableOpacity>
           </View>
           
-          {filteredSessions.map((session) => (
+          {filteredSessions.map((session: PracticeSession) => (
             <View key={session.id} style={styles.sessionCard}>
               <LinearGradient
                 colors={session.test_type === 'prep' ? ['#667eea', '#764ba2'] : ['#ff6b6b', '#ee5a24']}
@@ -405,15 +396,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  backButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.primary,
   },
   
   // Error state

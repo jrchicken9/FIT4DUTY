@@ -135,17 +135,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         setAuthState(prev => ({ ...prev, isLoading: false }));
-        throw error;
+        return { success: false, error: error.message };
       }
 
       if (data.user) {
         await loadUserProfile(data.user.id);
       }
 
-      return data;
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+      return { success: true, data };
     } catch (error: any) {
       setAuthState(prev => ({ ...prev, isLoading: false }));
-      throw error;
+      return { success: false, error: error?.message || 'Failed to sign in' };
     }
   };
 

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
+import AdminHeader from '@/components/AdminHeader';
 import {
   ArrowLeft,
   User,
@@ -189,24 +190,8 @@ export default function SessionAttendeesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          title: 'Session Attendees',
-          headerShown: false,
-        }} 
-      />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={24} color={Colors.white} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Session Attendees</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <Stack.Screen options={{ headerShown: false }} />
+      <AdminHeader title="Session Attendees" backTo="/admin/practice-sessions" />
 
       <ScrollView 
         style={styles.content}
@@ -385,30 +370,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.primary,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  headerSpacer: {
-    width: 40,
-  },
+  header: {},
   content: {
     flex: 1,
   },

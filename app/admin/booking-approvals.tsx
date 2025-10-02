@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
+import AdminHeader from '@/components/AdminHeader';
 import {
   CheckCircle,
   XCircle,
@@ -359,20 +360,8 @@ export default function BookingApprovalsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ title: 'Booking Approvals' }} />
-
-      {/* Header with Back Button */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ChevronLeft size={24} color={Colors.white} />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Booking Approvals</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <Stack.Screen options={{ headerShown: false }} />
+      <AdminHeader title="Booking Approvals" backTo="/admin/dashboard" />
 
       {/* Stats Overview */}
       <View style={styles.statsContainer}>
@@ -786,32 +775,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.white,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.white,
-  },
-  headerSpacer: {
-    width: 80, // Same width as back button for centering
-  },
+  header: {},
   centerContainer: {
     flex: 1,
     justifyContent: 'center',

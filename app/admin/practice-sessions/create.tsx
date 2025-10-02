@@ -259,7 +259,7 @@ export default function CreateSessionScreen() {
                     style={styles.cancelButton}
                     onPress={() => setShowAddLocation(false)}
                   >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <Text style={styles.addLocationCancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.saveButton}
@@ -1213,7 +1213,7 @@ export default function CreateSessionScreen() {
           </View>
           <TouchableOpacity 
             style={styles.headerCloseButton}
-            onPress={() => router.back()}
+            onPress={() => router.replace('/admin/practice-sessions')}
           >
             <X size={24} color={Colors.white} />
           </TouchableOpacity>
@@ -1239,7 +1239,7 @@ export default function CreateSessionScreen() {
               <View style={styles.navigationRow}>
                 <TouchableOpacity 
                   style={styles.cancelButton} 
-                  onPress={() => router.back()}
+                  onPress={() => router.replace('/admin/practice-sessions')}
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -1997,7 +1997,7 @@ export default function CreateSessionScreen() {
      marginTop: 24,
      gap: 12,
    },
-   cancelButtonText: {
+  addLocationCancelButtonText: {
      fontSize: 16,
      fontWeight: '600',
      color: Colors.text,

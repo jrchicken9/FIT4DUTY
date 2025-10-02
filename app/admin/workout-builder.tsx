@@ -12,6 +12,7 @@ import {
   Switch,
 } from 'react-native';
 import { router } from 'expo-router';
+import AdminHeader from '@/components/AdminHeader';
 import { 
   ChevronLeft, 
   Plus, 
@@ -313,16 +314,15 @@ export default function WorkoutBuilderScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ChevronLeft size={24} color={Colors.white} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Workout Builder</Text>
-        <TouchableOpacity onPress={() => setShowCreateModal(true)}>
-          <Plus size={24} color={Colors.white} />
-        </TouchableOpacity>
-      </View>
+      <AdminHeader 
+        title="Workout Builder" 
+        backTo="/admin/dashboard"
+        rightContent={(
+          <TouchableOpacity onPress={() => setShowCreateModal(true)}>
+            <Plus size={20} color={Colors.white} />
+          </TouchableOpacity>
+        )}
+      />
 
       <ScrollView style={styles.content}>
         {/* Stats */}
@@ -896,19 +896,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: Colors.textSecondary,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: Colors.primary,
-  },
-  headerTitle: {
-    ...typography.h2,
-    color: Colors.white,
-    fontWeight: '700',
-  },
+  header: {},
   content: {
     flex: 1,
   },

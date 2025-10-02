@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
+import AdminHeader from '@/components/AdminHeader';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/colors';
@@ -164,19 +165,8 @@ export default function AdminUsers() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          title: 'User Management',
-          headerLeft: () => (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Text style={styles.backButtonText}>← Back</Text>
-            </TouchableOpacity>
-          ),
-        }} 
-      />
+      <Stack.Screen options={{ headerShown: false }} />
+      <AdminHeader title="User Management" backTo="/admin/dashboard" />
 
       <ScrollView 
         style={styles.content}
@@ -299,15 +289,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  backButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.primary,
   },
   content: {
     flex: 1,

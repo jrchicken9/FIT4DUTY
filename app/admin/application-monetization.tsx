@@ -27,6 +27,7 @@ import {
   X,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import AdminHeader from '@/components/AdminHeader';
 import Colors from '@/constants/colors';
 import Button from '@/components/Button';
 import { useAuth } from '@/context/AuthContext';
@@ -207,16 +208,15 @@ export default function ApplicationMonetizationScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color={Colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Application Monetization</Text>
-        <TouchableOpacity onPress={handleSaveSettings} disabled={isSaving}>
-          <Save size={24} color={isSaving ? Colors.textSecondary : Colors.primary} />
-        </TouchableOpacity>
-      </View>
+      <AdminHeader 
+        title="Application Monetization" 
+        backTo="/admin/dashboard"
+        rightContent={(
+          <TouchableOpacity onPress={handleSaveSettings} disabled={isSaving}>
+            <Save size={20} color={isSaving ? Colors.textSecondary : Colors.white} />
+          </TouchableOpacity>
+        )}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Subscription Settings */}
@@ -500,21 +500,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-  },
+  header: {},
   content: {
     flex: 1,
     padding: 20,
