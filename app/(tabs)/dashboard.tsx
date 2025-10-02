@@ -482,20 +482,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
         
-        {/* Demo Button */}
-        <TouchableOpacity 
-          style={styles.demoButton}
-          onPress={() => router.push("/siren-gradient-demo")}
-        >
-          <View style={styles.demoIconContainer}>
-            <Shield size={28} color={Colors.policeRed} />
-          </View>
-          <View style={styles.demoTextContainer}>
-            <Text style={styles.demoButtonTitle}>🚨 Siren Gradient Demo</Text>
-            <Text style={styles.demoButtonSubtitle}>See borders that are half red, half blue blending together</Text>
-          </View>
-          <ChevronRight size={20} color={Colors.policeRed} />
-        </TouchableOpacity>
+        {/* Demo Button removed */}
       </View>
 
       {/* Recruitment News */}
