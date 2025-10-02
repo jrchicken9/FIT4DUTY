@@ -1,0 +1,461 @@
+[
+  {
+    "question":"What is the minimum age to apply as a police officer in Ontario?",
+    "correct_answer":"18 years old",
+    "incorrect_answers":[
+      "16 years old",
+      "21 years old",
+      "25 years old"
+    ]
+  },
+  {
+    "question":"What type of driver's licence is required to apply as a police officer in Ontario?",
+    "correct_answer":"G licence",
+    "incorrect_answers":[
+      "G1 licence",
+      "G2 licence",
+      "M licence"
+    ]
+  },
+  {
+    "question":"Which of the following is a minimum education requirement for police applicants in Ontario?",
+    "correct_answer":"Ontario Secondary School Diploma (OSSD)",
+    "incorrect_answers":[
+      "Grade 10 only",
+      "College Diploma",
+      "Bachelor\u2019s Degree"
+    ]
+  },
+  {
+    "question":"Applicants must be legally entitled to work in Canada. Which of the following qualifies?",
+    "correct_answer":"Canadian Citizen or Permanent Resident",
+    "incorrect_answers":[
+      "Student Visa Holder",
+      "Tourist Visa Holder",
+      "Temporary Visitor"
+    ]
+  },
+  {
+    "question":"What must applicants have regarding criminal charges or convictions?",
+    "correct_answer":"No criminal charges or convictions that have not been pardoned",
+    "incorrect_answers":[
+      "Minor offences are acceptable",
+      "Convictions older than 5 years don\u2019t matter",
+      "At least one conviction is allowed"
+    ]
+  },
+  {
+    "question":"What is the minimum vision standard required without corrective lenses for Ontario police applicants?",
+    "correct_answer":"20\/40 in each eye",
+    "incorrect_answers":[
+      "20\/20 in each eye",
+      "20\/60 in each eye",
+      "20\/100 in each eye"
+    ]
+  },
+  {
+    "question":"Which type of colour vision is required for police applicants?",
+    "correct_answer":"Normal colour vision",
+    "incorrect_answers":[
+      "Partial colour blindness acceptable",
+      "No restrictions",
+      "Only red-green colour blindness acceptable"
+    ]
+  },
+  {
+    "question":"What is the minimum hearing requirement for Ontario police applicants?",
+    "correct_answer":"Normal unaided hearing",
+    "incorrect_answers":[
+      "Mild hearing loss acceptable",
+      "Hearing aids mandatory",
+      "No standard exists"
+    ]
+  },
+  {
+    "question":"Which medical requirement must applicants meet?",
+    "correct_answer":"Be in good overall health",
+    "incorrect_answers":[
+      "Medical conditions don\u2019t matter",
+      "Only physical injuries matter",
+      "Any condition is acceptable"
+    ]
+  },
+  {
+    "question":"Why is honesty considered a prerequisite for policing?",
+    "correct_answer":"Because police officers must be trusted by the public and courts",
+    "incorrect_answers":[
+      "Because it is optional",
+      "Because honesty improves fitness scores",
+      "Because it lowers training costs"
+    ]
+  },
+  {
+    "question":"Which language must Ontario police applicants demonstrate fluency in?",
+    "correct_answer":"English",
+    "incorrect_answers":[
+      "French only",
+      "Spanish",
+      "Any language is acceptable"
+    ]
+  },
+  {
+    "question":"Applicants must have a valid certification in which of the following before applying?",
+    "correct_answer":"First Aid and CPR (Level C)",
+    "incorrect_answers":[
+      "Lifeguard Certification",
+      "Scuba Diving Certification",
+      "None required"
+    ]
+  },
+  {
+    "question":"Why is volunteer experience considered an unwritten prerequisite?",
+    "correct_answer":"It shows community involvement and responsibility",
+    "incorrect_answers":[
+      "It replaces the fitness test",
+      "It guarantees a job",
+      "It is legally required"
+    ]
+  },
+  {
+    "question":"What document verifies completion of required testing before applying?",
+    "correct_answer":"OACP Certificate",
+    "incorrect_answers":[
+      "Driver\u2019s Licence",
+      "College Diploma",
+      "Volunteer Log"
+    ]
+  },
+  {
+    "question":"What is the minimum residency status required to apply?",
+    "correct_answer":"Canadian Citizen or Permanent Resident",
+    "incorrect_answers":[
+      "International Student",
+      "Visitor Visa Holder",
+      "Temporary Work Visa"
+    ]
+  },
+  {
+    "question":"Why is emotional resilience important as a prerequisite?",
+    "correct_answer":"Because officers face high-stress and traumatic situations",
+    "incorrect_answers":[
+      "Because it improves eyesight",
+      "Because it is part of the shuttle run",
+      "Because it shortens training"
+    ]
+  },
+  {
+    "question":"Which of the following driving records would disqualify an applicant?",
+    "correct_answer":"Multiple unpaid driving suspensions",
+    "incorrect_answers":[
+      "One parking ticket",
+      "Expired licence plate",
+      "Owning two vehicles"
+    ]
+  },
+  {
+    "question":"Which of the following is an unwritten prerequisite for Ontario police applicants?",
+    "correct_answer":"Stable employment history",
+    "incorrect_answers":[
+      "Owning property",
+      "Speaking three languages",
+      "Military service"
+    ]
+  },
+  {
+    "question":"Which of the following fitness abilities is expected prior to application?",
+    "correct_answer":"Ability to complete a shuttle run",
+    "incorrect_answers":[
+      "Ability to swim 100m",
+      "Ability to bike 20km",
+      "Ability to run a marathon"
+    ]
+  },
+  {
+    "question":"Why is communication considered a core prerequisite?",
+    "correct_answer":"Because officers must effectively interact with the public",
+    "incorrect_answers":[
+      "Because it replaces writing skills",
+      "Because it lowers stress",
+      "Because it avoids interviews"
+    ]
+  },
+  {
+    "question":"Applicants must have a history free of what type of behaviour?",
+    "correct_answer":"Serious criminal behaviour",
+    "incorrect_answers":[
+      "Poor handwriting",
+      "Late school attendance",
+      "Low social media activity"
+    ]
+  },
+  {
+    "question":"Why is teamwork emphasized as an unwritten prerequisite?",
+    "correct_answer":"Because police work requires cooperation with others",
+    "incorrect_answers":[
+      "Because it improves driving skills",
+      "Because it increases fitness results",
+      "Because it lowers paperwork"
+    ]
+  },
+  {
+    "question":"Which personal quality is most essential for police work?",
+    "correct_answer":"Integrity",
+    "incorrect_answers":[
+      "Fashion sense",
+      "Cooking ability",
+      "Singing ability"
+    ]
+  },
+  {
+    "question":"Which of the following would be a red flag in a background check?",
+    "correct_answer":"Unpaid large debts and fraud history",
+    "incorrect_answers":[
+      "Owning a dog",
+      "Working part-time",
+      "Volunteering too often"
+    ]
+  },
+  {
+    "question":"Applicants are encouraged to maintain what type of physical shape?",
+    "correct_answer":"Above-average physical fitness",
+    "incorrect_answers":[
+      "Minimal exercise",
+      "No exercise requirement",
+      "Focus only on weightlifting"
+    ]
+  },
+  {
+    "question":"Which of the following is part of a professional prerequisite?",
+    "correct_answer":"Strong ethical decision-making",
+    "incorrect_answers":[
+      "Owning a car",
+      "Having a family",
+      "Knowing martial arts"
+    ]
+  },
+  {
+    "question":"Why is reliability considered an essential prerequisite?",
+    "correct_answer":"Because police work demands consistency and dependability",
+    "incorrect_answers":[
+      "Because it improves eyesight",
+      "Because it makes you taller",
+      "Because it improves test scores"
+    ]
+  },
+  {
+    "question":"What type of background references are applicants encouraged to have?",
+    "correct_answer":"Professional and community references",
+    "incorrect_answers":[
+      "Anonymous online reviews",
+      "Family-only references",
+      "Paid references"
+    ]
+  },
+  {
+    "question":"Which of the following best describes the police hiring competition?",
+    "correct_answer":"Highly competitive with many qualified applicants",
+    "incorrect_answers":[
+      "Few apply each year",
+      "No competition",
+      "Only volunteers apply"
+    ]
+  },
+  {
+    "question":"Which skill is essential for report writing?",
+    "correct_answer":"Strong written communication",
+    "incorrect_answers":[
+      "Artistic drawing",
+      "Mathematics only",
+      "Coding ability"
+    ]
+  },
+  {
+    "question":"Why is discipline considered a prerequisite?",
+    "correct_answer":"Because officers must follow procedures under pressure",
+    "incorrect_answers":[
+      "Because it improves humour",
+      "Because it is tested in math",
+      "Because it avoids volunteering"
+    ]
+  },
+  {
+    "question":"Why is time management valuable before applying?",
+    "correct_answer":"Because training and duties require strict schedules",
+    "incorrect_answers":[
+      "Because it improves driving",
+      "Because it reduces eyesight strain",
+      "Because it makes you faster in the gym"
+    ]
+  },
+  {
+    "question":"Why is cultural awareness important for applicants?",
+    "correct_answer":"Because police serve diverse communities",
+    "incorrect_answers":[
+      "Because it replaces language skills",
+      "Because it avoids paperwork",
+      "Because it improves fitness"
+    ]
+  },
+  {
+    "question":"What personal record may disqualify an applicant?",
+    "correct_answer":"A recent DUI conviction",
+    "incorrect_answers":[
+      "A library fine",
+      "Late cellphone bill",
+      "Owning two cars"
+    ]
+  },
+  {
+    "question":"Which is a desirable but unwritten prerequisite skill?",
+    "correct_answer":"Conflict resolution",
+    "incorrect_answers":[
+      "Cooking",
+      "Dancing",
+      "Guitar playing"
+    ]
+  },
+  {
+    "question":"Which of the following best supports an applicant\u2019s credibility?",
+    "correct_answer":"Strong professional references",
+    "incorrect_answers":[
+      "Number of Instagram followers",
+      "High video game score",
+      "Fashion sense"
+    ]
+  },
+  {
+    "question":"Why is adaptability an important prerequisite?",
+    "correct_answer":"Because officers face unpredictable situations daily",
+    "incorrect_answers":[
+      "Because it improves eyesight",
+      "Because it lowers bills",
+      "Because it avoids volunteering"
+    ]
+  },
+  {
+    "question":"Which is considered an unwritten educational prerequisite?",
+    "correct_answer":"Post-secondary education or training",
+    "incorrect_answers":[
+      "Elementary school only",
+      "Self-study only",
+      "None at all"
+    ]
+  },
+  {
+    "question":"Which type of licence suspension may affect eligibility?",
+    "correct_answer":"Recent licence suspensions for impaired driving",
+    "incorrect_answers":[
+      "Expired insurance",
+      "Overdue emissions test",
+      "Lost licence card"
+    ]
+  },
+  {
+    "question":"Why is self-control important as a prerequisite?",
+    "correct_answer":"Because officers must remain calm under provocation",
+    "incorrect_answers":[
+      "Because it lowers weight",
+      "Because it raises eyesight",
+      "Because it replaces volunteering"
+    ]
+  },
+  {
+    "question":"Why is fitness a mandatory prerequisite?",
+    "correct_answer":"Because officers must meet the physical demands of the job",
+    "incorrect_answers":[
+      "Because it looks good in uniform",
+      "Because it replaces interviews",
+      "Because it is optional"
+    ]
+  },
+  {
+    "question":"Which is part of the psychological prerequisite screening?",
+    "correct_answer":"Mental health evaluation",
+    "incorrect_answers":[
+      "Fashion evaluation",
+      "Cooking skills",
+      "Driving ability"
+    ]
+  },
+  {
+    "question":"Why is discretion an important prerequisite?",
+    "correct_answer":"Because officers must handle sensitive information responsibly",
+    "incorrect_answers":[
+      "Because it improves fitness",
+      "Because it replaces teamwork",
+      "Because it lowers taxes"
+    ]
+  },
+  {
+    "question":"Which unwritten prerequisite is often reviewed by recruiters?",
+    "correct_answer":"Social media conduct",
+    "incorrect_answers":[
+      "Netflix history",
+      "Spotify playlists",
+      "Online shopping cart"
+    ]
+  },
+  {
+    "question":"Why is initiative valued as a prerequisite?",
+    "correct_answer":"Because officers must act without waiting for instructions in emergencies",
+    "incorrect_answers":[
+      "Because it replaces exams",
+      "Because it avoids volunteering",
+      "Because it improves eyesight"
+    ]
+  },
+  {
+    "question":"What financial issue could raise concerns in a background check?",
+    "correct_answer":"Excessive unpaid debt or bankruptcy",
+    "incorrect_answers":[
+      "Paying bills early",
+      "Having a credit card",
+      "Owning a home"
+    ]
+  },
+  {
+    "question":"Why is resilience to shift work considered an unwritten prerequisite?",
+    "correct_answer":"Because police work requires irregular hours",
+    "incorrect_answers":[
+      "Because it improves eyesight",
+      "Because it replaces volunteering",
+      "Because it reduces paperwork"
+    ]
+  },
+  {
+    "question":"Which requirement relates to citizenship documentation?",
+    "correct_answer":"Valid proof of Canadian citizenship or permanent residence",
+    "incorrect_answers":[
+      "Tourist stamp",
+      "Foreign driver\u2019s licence",
+      "Student card"
+    ]
+  },
+  {
+    "question":"Which of the following helps applicants stand out competitively?",
+    "correct_answer":"Prior experience in security or law enforcement",
+    "incorrect_answers":[
+      "Owning luxury items",
+      "Being a social media influencer",
+      "Winning a lottery"
+    ]
+  },
+  {
+    "question":"Why is ethical judgment important as a prerequisite?",
+    "correct_answer":"Because officers must make fair decisions daily",
+    "incorrect_answers":[
+      "Because it lowers fitness scores",
+      "Because it replaces volunteering",
+      "Because it saves money"
+    ]
+  },
+  {
+    "question":"Which health habit is encouraged as part of preparation?",
+    "correct_answer":"Maintaining a healthy lifestyle with exercise and diet",
+    "incorrect_answers":[
+      "Smoking regularly",
+      "Avoiding all physical activity",
+      "Eating only fast food"
+    ]
+  }
+]
