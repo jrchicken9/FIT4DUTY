@@ -7,7 +7,7 @@
  - Pushes to origin main
 */
 
-const { execSync, spawnSync } = require('child_process');
+const { execSync } = require('child_process');
 const readline = require('readline');
 
 function run(cmd, opts = {}) {
@@ -32,38 +32,52 @@ function prompt(question) {
   });
 }
 
-async function main() {
-  // Verify git exists
+function resolveGit() {
   try {
     run('git --version');
-  } catch (e) {
-    console.error('Git is not installed or not in PATH. Please install Git and try again.');
-    process.exit(1);
+    return 'git';
+  } catch {}
+  const pf = process.env['ProgramFiles'];
+  const pf86 = process.env['ProgramFiles(x86)'];
+  const candidates = [];
+  if (pf) candidates.push(`${pf}\\Git\\bin\\git.exe`);
+  if (pf86) candidates.push(`${pf86}\\Git\\bin\\git.exe`);
+  for (const p of candidates) {
+    try {
+      run(`"${p}" --version`);
+      return `"${p}"`;
+    } catch {}
   }
+  console.error('Git is not installed or not in PATH. Please install Git and try again.');
+  process.exit(1);
+}
+
+async function main() {
+  const git = resolveGit();
 
   // Check if inside a git repo
-  const inside = safeRun('git rev-parse --is-inside-work-tree');
+  const inside = safeRun(`${git} rev-parse --is-inside-work-tree`);
   if (inside !== 'true') {
     console.error('This directory is not a Git repository. Run: git init');
     process.exit(1);
   }
 
   // Ensure main branch exists
-  const currentBranch = safeRun('git branch --show-current');
+  const currentBranch = safeRun(`${git} branch --show-current`);
   if (!currentBranch) {
     // Detached or no commits; ensure initial commit path
-    const hasCommits = safeRun('git rev-parse --verify HEAD');
+    const hasCommits = safeRun(`${git} rev-parse --verify HEAD`);
     if (!hasCommits) {
       console.log('Creating initial commit on main...');
-      safeRun('git checkout -b main');
+      safeRun(`${git} checkout -b main`);
     }
   }
 
   // Stage changes
-  run('git add .');
+  run(`${git} add .`);
 
   // If no changes, exit
-  const status = run('git status --porcelain');
+  const status = run(`${git} status --porcelain`);
   if (!status) {
     console.log('No changes to commit.');
     return;
@@ -80,31 +94,31 @@ async function main() {
   }
 
   // Commit
-  run(`git commit -m ${JSON.stringify(commitMessage)}`);
+  run(`${git} commit -m ${JSON.stringify(commitMessage)}`);
 
   // Ensure origin exists
-  const remotes = safeRun('git remote -v');
+  const remotes = safeRun(`${git} remote -v`);
   if (!remotes.includes('origin')) {
     console.error('Remote "origin" is not set. Run: git remote add origin <git-url>');
     process.exit(1);
   }
 
   // Ensure branch is main
-  const branch = safeRun('git branch --show-current') || 'main';
+  const branch = safeRun(`${git} branch --show-current`) || 'main';
   if (branch !== 'main') {
     console.log(`Switching to main branch from ${branch}...`);
-    safeRun('git checkout main');
+    safeRun(`${git} checkout main`);
   }
 
   // Push
   try {
     console.log('Pushing to origin main...');
-    run('git push -u origin main');
+    run(`${git} push -u origin main`);
   } catch (e) {
     // Fallback: try to set upstream
     console.log('Push failed. Attempting to create main and set upstream...');
-    safeRun('git checkout -B main');
-    run('git push -u origin main');
+    safeRun(`${git} checkout -B main`);
+    run(`${git} push -u origin main`);
   }
 
   console.log('Done.');

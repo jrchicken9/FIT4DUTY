@@ -8,6 +8,8 @@
     "start-web": "npx expo start --web --tunnel",
     "start-web-dev": "DEBUG=expo* npx expo start --web --tunnel",
     "push": "node scripts/push.js",
+    "pull": "node scripts/pull.js",
+    "pull:mirror": "node scripts/pull.js --mirror --yes",
     "optimize": "node scripts/optimize-performance.js",
     "clear-cache": "npx expo start --clear",
     "backup": "bash scripts/backup.sh"
