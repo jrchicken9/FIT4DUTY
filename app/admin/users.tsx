@@ -35,14 +35,19 @@ export default function AdminUsers() {
 
   // Check admin access
   useEffect(() => {
+    // Wait for user to be loaded before checking access
+    if (user === null) {
+      return; // Still loading
+    }
+
     if (!user) {
-      console.error('Access Denied: User not logged in');
+      console.log('Redirecting to sign-in: User not logged in');
       router.replace('/auth/sign-in');
       return;
     }
 
     if (!isSuperAdmin()) {
-      console.error('Access Denied: User not super admin');
+      console.log('Redirecting to home: User not super admin');
       router.replace('/');
       return;
     }

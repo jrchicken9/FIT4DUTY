@@ -224,10 +224,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         supabaseUser: null,
         isLoading: false,
       });
-      // Redirect to welcome screen after sign out
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
-      }
+      // Note: Navigation will be handled by the component calling signOut
     } catch (error: any) {
       throw error;
     }

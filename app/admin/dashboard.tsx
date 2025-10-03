@@ -38,14 +38,19 @@ export default function AdminDashboard() {
   // Check admin access with better security
   useEffect(() => {
     const checkAccess = async () => {
+      // Wait for user to be loaded before checking access
+      if (user === null) {
+        return; // Still loading
+      }
+
       if (!user) {
-        console.error('Access Denied: User not logged in');
+        console.log('Redirecting to sign-in: User not logged in');
         router.replace('/auth/sign-in');
         return;
       }
 
       if (!isAdmin()) {
-        console.error('Access Denied: User not admin');
+        console.log('Redirecting to home: User not admin');
         router.replace('/');
         return;
       }
@@ -59,7 +64,7 @@ export default function AdminDashboard() {
           .single();
 
         if (!currentUser?.is_admin && currentUser?.role !== 'admin' && currentUser?.role !== 'super_admin') {
-          console.error('Access Revoked: Admin privileges revoked');
+          console.log('Redirecting to home: Admin privileges revoked');
           router.replace('/');
           return;
         }
