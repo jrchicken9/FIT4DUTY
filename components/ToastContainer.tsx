@@ -7,7 +7,7 @@ export default function ToastContainer() {
 
   return (
     <View style={styles.container} pointerEvents="box-none">
-      {toasts.map((toast, index) => (
+      {toasts.map((toast: any, index: number) => (
         <ToastNotification
           key={toast.id}
           visible={true}

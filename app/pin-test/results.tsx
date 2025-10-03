@@ -119,7 +119,7 @@ function ResultCard({ result, onDelete }: { result: PinTestResult; onDelete: (id
           
           {scoreResult && (
             <View style={styles.componentScores}>
-              {scoreResult.componentScores.map((component, index) => (
+              {scoreResult.componentScores.map((component: any, index: number) => (
                 <View key={index} style={styles.componentScore}>
                   <Text style={styles.componentName}>{component.component}</Text>
                   <Text style={styles.componentScoreText}>
@@ -221,7 +221,7 @@ export default function PinTestResultsScreen() {
               {testResults.length} Test Result{testResults.length !== 1 ? 's' : ''}
             </Text>
             
-            {testResults.map((result) => (
+            {testResults.map((result: any) => (
               <ResultCard
                 key={result.id}
                 result={result}

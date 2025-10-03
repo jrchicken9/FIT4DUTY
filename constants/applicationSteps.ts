@@ -343,7 +343,7 @@ const applicationSteps: ApplicationStep[] = [
   {
     id: "lfi-interview",
     title: "Local Focus Interview (LFI)",
-    description: "Law Enforcement Interview to assess suitability for police work.",
+    description: "A formal stage in Ontario police hiring that assesses your fit for the service and community.",
     requirements: [
       "Professional attire",
       "Knowledge of police service",

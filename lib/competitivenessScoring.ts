@@ -140,10 +140,6 @@ export function evaluateCompetitiveness(config: Config, profile: ProfileArrays):
     const eduList = (profile.education_details || []);
     const hasRelevant = eduList.some(e => RELEVANT_EDU_RE.test(String(e?.program || e?.field_of_study || '')));
     
-    ),
-      hasRelevant
-    });
-    
     switch (id) {
       case 'bachelor_relevant':
         return /bachelor|university/i.test(highest) && hasRelevant ? 15 : 0;
@@ -187,8 +183,6 @@ export function evaluateCompetitiveness(config: Config, profile: ProfileArrays):
   // Work
   const w = metrics.work;
   const workRes = evalRules('work', (id) => {
-    .map(w => ({ title: w?.title, role: w?.role, police_relevant: w?.police_relevant }))
-    });
     
     switch (id) {
       case 'relevant_3y_plus':

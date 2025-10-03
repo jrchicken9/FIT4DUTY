@@ -229,7 +229,7 @@ const WorkoutSessionScreen = React.memo(function WorkoutSessionScreen({ workoutI
       {sessionState?.isResting && workout && sessionState.currentExerciseIndex < workout.exercises.length - 1 && (
         <ExerciseTipsCard
           exerciseName={workout.exercises[sessionState.currentExerciseIndex + 1].exercise.name}
-          exerciseTips={workout.exercises[sessionState.currentExerciseIndex + 1].exercise.instructions ? [workout.exercises[sessionState.currentExerciseIndex + 1].exercise.instructions] : []}
+          exerciseTips={workout.exercises[sessionState.currentExerciseIndex + 1].exercise.instructions ? [workout.exercises[sessionState.currentExerciseIndex + 1].exercise.instructions].filter((tip): tip is string => Boolean(tip)) : []}
           muscleGroups={workout.exercises[sessionState.currentExerciseIndex + 1].exercise.muscle_groups}
           difficultyLevel={workout.exercises[sessionState.currentExerciseIndex + 1].exercise.difficulty_level}
           isVisible={showTips}
@@ -362,7 +362,7 @@ const WorkoutSessionScreen = React.memo(function WorkoutSessionScreen({ workoutI
       )}
     </SafeAreaView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

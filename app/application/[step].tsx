@@ -27,6 +27,7 @@ import PoliceServiceSelector from "@/components/PoliceServiceSelector";
 import PoliceServiceApplication from "@/components/PoliceServiceApplication";
 import PoliceServiceSelectionModal from "@/components/PoliceServiceSelectionModal";
 import PREPFitnessTestStep from "@/components/PREPFitnessTestStep";
+import LFIStep from "@/components/LFIStep";
 import PoliceThemeBackground from "@/components/PoliceThemeBackground";
 import ProfessionalBackground from "@/components/ProfessionalBackground";
 import applicationSteps from "@/constants/applicationSteps";
@@ -313,6 +314,10 @@ export default function ApplicationStepDetailScreen() {
         <PREPFitnessTestStep />
       )}
 
+      {resolvedStepId === 'lfi-interview' && (
+        <LFIStep />
+      )}
+
       {resolvedStepId === 'application' && selectedServiceId && (
         <PoliceServiceApplication 
           serviceId={selectedServiceId} 
@@ -326,7 +331,7 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && (
+      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && (
         <View style={styles.requirementsContainer}>
           <Text style={styles.sectionTitle}>Requirements</Text>
           {stepData.requirements.map((requirement, index) => (
@@ -337,7 +342,7 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && (
+      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && (
         <View style={styles.tipsContainer}>
           <Text style={styles.sectionTitle}>Tips</Text>
           {stepData.tips.map((tip, index) => (
@@ -351,7 +356,7 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.resources.length > 0 && (
+      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && stepData.resources.length > 0 && (
         <View style={styles.resourcesContainer}>
           <Text style={styles.sectionTitle}>Resources</Text>
           {stepData.resources.map((resource, index) => (
@@ -368,8 +373,8 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {/* Monthly Step Test Entry (hidden for pre-application-prep and application) */}
-      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && (
+      {/* Monthly Step Test Entry (hidden for pre-application-prep, application, and lfi-interview) */}
+      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && (
         <View style={styles.testCardContainer}>
           <View style={styles.testCardHeader}>
             <Text style={styles.sectionTitle}>Monthly Step Test</Text>
@@ -395,7 +400,7 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {stepData.nextSteps.length > 0 && resolvedStepId !== 'prerequisites' && resolvedStepId !== 'prep-fitness-test' && (
+      {stepData.nextSteps.length > 0 && resolvedStepId !== 'prerequisites' && resolvedStepId !== 'prep-fitness-test' && resolvedStepId !== 'lfi-interview' && (
         <View style={styles.nextStepsContainer}>
           <Text style={styles.sectionTitle}>Next Steps</Text>
           {stepData.nextSteps.map((nextStepId) => {
@@ -421,8 +426,8 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {/* Notes Section - Hidden for prep-fitness-test */}
-      {resolvedStepId !== 'prep-fitness-test' && (
+      {/* Notes Section - Hidden for prep-fitness-test and lfi-interview */}
+      {resolvedStepId !== 'prep-fitness-test' && resolvedStepId !== 'lfi-interview' && (
         <View style={styles.notesContainer}>
           <View style={styles.notesHeader}>
             <Text style={styles.sectionTitle}>Notes</Text>

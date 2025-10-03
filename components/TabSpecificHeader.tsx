@@ -214,7 +214,7 @@ export default function TabSpecificHeader({ tab, stats }: TabSpecificHeaderProps
         <ActionButton 
           text="Join Discussion" 
           icon={MessageCircle} 
-          onPress={() => router.push('/(tabs)/community')} 
+          onPress={() => router.push('/community' as any)} 
         />
       </View>
     </View>

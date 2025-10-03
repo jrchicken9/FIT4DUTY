@@ -39,7 +39,7 @@ export default function ToastNotification({
 }: ToastNotificationProps) {
   const slideAnim = useRef(new Animated.Value(-100)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
-  const timeoutRef = useRef<number | undefined>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (visible) {
@@ -58,7 +58,7 @@ export default function ToastNotification({
       ]).start();
 
       // Auto dismiss after duration
-      timeoutRef.current = window.setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         handleDismiss();
       }, duration);
     } else {

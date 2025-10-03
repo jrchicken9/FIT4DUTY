@@ -100,8 +100,6 @@ function RootLayoutNav() {
           headerTitleAlign: 'center',
           headerStyle: {
             backgroundColor: Colors.primary,
-            borderBottomColor: Colors.primary,
-            borderBottomWidth: 0,
           },
           headerTintColor: Colors.white,
         }} 
@@ -113,8 +111,6 @@ function RootLayoutNav() {
           headerTitleAlign: 'center',
           headerStyle: {
             backgroundColor: Colors.primary,
-            borderBottomColor: Colors.primary,
-            borderBottomWidth: 0,
           },
           headerTintColor: Colors.white,
         }} 

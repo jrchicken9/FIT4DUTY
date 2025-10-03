@@ -72,7 +72,13 @@ const supabaseOptions = {
   },
 };
 
-export const supabase = createClient(finalUrl, finalKey, supabaseOptions);
+export const supabase = createClient(finalUrl, finalKey, {
+  ...supabaseOptions,
+  global: {
+    ...supabaseOptions.global,
+    fetch: fetch as any, // Type assertion to resolve fetch compatibility
+  },
+});
 
 // Initialize database tables check on startup
 if (typeof window !== 'undefined') {

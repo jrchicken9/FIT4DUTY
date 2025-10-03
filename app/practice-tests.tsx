@@ -37,7 +37,7 @@ export default function PracticeTestsScreen() {
 
   // Memoize filtered tests to prevent unnecessary re-computations
   const filteredTests = useMemo(() => {
-    return practiceTests.filter(test => {
+    return practiceTests.filter((test: any) => {
       if (filterType === 'all') return true;
       return test.test_type === filterType;
     });
@@ -179,7 +179,7 @@ export default function PracticeTestsScreen() {
           />
         }
       >
-        {filteredTests.map(test => (
+        {filteredTests.map((test: any) => (
           <PracticeTestCard
             key={test.id}
             test={test}

@@ -3,7 +3,28 @@ import {
   StyleSheet,
   Alert,
   Dimensions,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+  Zap,
+  BarChart3,
+  Star,
+  Users,
+  Check,
+  Calendar,
+  Crown,
+  Shield,
+  Clock,
+  ArrowRight,
+  X,
+} from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import PoliceThemeBackground from '@/components/PoliceThemeBackground';
+import UpsellModal from '@/components/UpsellModal';
 
 
 import { useSubscription } from '../context/SubscriptionContext';
@@ -21,7 +42,7 @@ export default function SubscriptionScreen() {
   } = useSubscription();
   
   // Ensure subscription tier is always valid
-  const currentTier = subscription?.tier && SUBSCRIPTION_PLANS[subscription.tier] ? subscription.tier : 'free';
+  const currentTier: keyof typeof SUBSCRIPTION_PLANS = subscription?.tier && SUBSCRIPTION_PLANS[subscription.tier as keyof typeof SUBSCRIPTION_PLANS] ? subscription.tier as keyof typeof SUBSCRIPTION_PLANS : 'free';
   
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const canUsePromotionalOffer = !hasUsedPromotionalOffer();

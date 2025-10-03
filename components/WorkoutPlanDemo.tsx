@@ -9,7 +9,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Play, 
-  Stop, 
+  Square, 
   RotateCcw,
   Info
 } from 'lucide-react-native';
