@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Colors from "@/constants/colors";
 import { typography } from "@/constants/designSystem";
 import { AuthProvider } from "@/context/AuthContext";
+import { NetworkProvider } from "@/context/NetworkContext";
 import { FitnessProvider } from "@/context/FitnessContext";
 import { WorkoutPlanProvider } from "@/context/WorkoutPlanContext";
 import { ApplicationProvider } from "@/context/ApplicationContext";
@@ -21,6 +22,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import FirstSignInHandler from "@/components/FirstSignInHandler";
 import Logo from "@/components/Logo";
 import ToastContainer from "@/components/ToastContainer";
+import OfflineNotice from "@/components/OfflineNotice";
 
 // Helper function for consistent blue header styling
 const getBlueHeaderOptions = (title: string) => ({
@@ -46,6 +48,7 @@ SplashScreen.preventAutoHideAsync();
 function RootLayoutNav() {
   return (
     <>
+      <OfflineNotice />
       <ToastContainer />
       <FirstSignInHandler />
       <Stack screenOptions={{ headerBackTitle: "Back" }}>
@@ -163,31 +166,33 @@ export default function RootLayout() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <AuthProvider>
-            <SubscriptionProvider>
+          <NetworkProvider>
+            <AuthProvider>
+              <SubscriptionProvider>
                 <FitnessProvider>
                   <WorkoutPlanProvider>
                     <ApplicationProvider>
-                    <CommunityProvider>
-                      <PinTestProvider>
-                        <PracticeTestsProvider>
-                          <PracticeSessionsProvider>
-                            <NotificationProvider>
-                              <ToastProvider>
-                                <GestureHandlerRootView style={{ flex: 1 }}>
-                                  <RootLayoutNav />
-                                </GestureHandlerRootView>
-                              </ToastProvider>
-                            </NotificationProvider>
-                          </PracticeSessionsProvider>
-                        </PracticeTestsProvider>
-                      </PinTestProvider>
-                    </CommunityProvider>
-                  </ApplicationProvider>
-                </WorkoutPlanProvider>
-              </FitnessProvider>
-            </SubscriptionProvider>
-          </AuthProvider>
+                      <CommunityProvider>
+                        <PinTestProvider>
+                          <PracticeTestsProvider>
+                            <PracticeSessionsProvider>
+                              <NotificationProvider>
+                                <ToastProvider>
+                                  <GestureHandlerRootView style={{ flex: 1 }}>
+                                    <RootLayoutNav />
+                                  </GestureHandlerRootView>
+                                </ToastProvider>
+                              </NotificationProvider>
+                            </PracticeSessionsProvider>
+                          </PracticeTestsProvider>
+                        </PinTestProvider>
+                      </CommunityProvider>
+                    </ApplicationProvider>
+                  </WorkoutPlanProvider>
+                </FitnessProvider>
+              </SubscriptionProvider>
+            </AuthProvider>
+          </NetworkProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
