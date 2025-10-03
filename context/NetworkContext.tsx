@@ -41,14 +41,25 @@ export const NetworkProvider = ({ children }: { children: React.ReactNode }) => 
         return isOnline;
       } else {
         // React Native - use NetInfo if available
-        const NetInfo = require('@react-native-community/netinfo');
-        const state = await NetInfo.fetch();
-        setNetworkState({
-          isConnected: state.isConnected ?? false,
-          isOnline: state.isInternetReachable ?? false,
-          connectionType: state.type as any,
-        });
-        return state.isConnected && state.isInternetReachable;
+        try {
+          const NetInfo = require('@react-native-community/netinfo');
+          const state = await NetInfo.fetch();
+          setNetworkState({
+            isConnected: state.isConnected ?? false,
+            isOnline: state.isInternetReachable ?? false,
+            connectionType: state.type as any,
+          });
+          return state.isConnected && state.isInternetReachable;
+        } catch (netInfoError) {
+          console.log('NetInfo not available, using fallback:', netInfoError);
+          // Fallback to assuming online if NetInfo fails
+          setNetworkState(prev => ({
+            ...prev,
+            isConnected: true,
+            isOnline: true,
+          }));
+          return true;
+        }
       }
     } catch (error) {
       console.log('Network check failed:', error);
@@ -109,7 +120,13 @@ export const NetworkProvider = ({ children }: { children: React.ReactNode }) => 
 
         return unsubscribe;
       } catch (error) {
-        console.log('NetInfo not available:', error);
+        console.log('NetInfo not available, using fallback:', error);
+        // Fallback - assume always online if NetInfo fails
+        setNetworkState(prev => ({
+          ...prev,
+          isConnected: true,
+          isOnline: true,
+        }));
       }
     }
   }, []);
