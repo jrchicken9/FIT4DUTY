@@ -50,6 +50,8 @@ export default function LFIStep() {
   const [isNewAttempt, setIsNewAttempt] = useState(false);
   const [userAnswers, setUserAnswers] = useState<Record<LFIQuestionKey, string>>({} as any);
   const [userGrades, setUserGrades] = useState<Record<LFIQuestionKey, LFIGradingResult>>({} as any);
+  const [userDrafts, setUserDrafts] = useState<Record<LFIQuestionKey, string>>({} as any);
+  const [gradedAnswers, setGradedAnswers] = useState<Record<LFIQuestionKey, string>>({} as any);
   const [showExample, setShowExample] = useState<LFIQuestionKey | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
@@ -108,6 +110,8 @@ export default function LFIStep() {
     try {
       const savedAnswers = localStorage.getItem('lfi_user_answers');
       const savedGrades = localStorage.getItem('lfi_user_grades');
+      const savedDrafts = localStorage.getItem('lfi_user_drafts');
+      const savedGraded = localStorage.getItem('lfi_graded_answers');
       
       if (savedAnswers) {
         setUserAnswers(JSON.parse(savedAnswers));
@@ -115,15 +119,23 @@ export default function LFIStep() {
       if (savedGrades) {
         setUserGrades(JSON.parse(savedGrades));
       }
+      if (savedDrafts) {
+        setUserDrafts(JSON.parse(savedDrafts));
+      }
+      if (savedGraded) {
+        setGradedAnswers(JSON.parse(savedGraded));
+      }
     } catch (error) {
       console.log('Local storage not available');
     }
   };
 
-  const saveToLocalStorage = (answers: Record<LFIQuestionKey, string>, grades: Record<LFIQuestionKey, LFIGradingResult>) => {
+  const saveToLocalStorage = (answers: Record<LFIQuestionKey, string>, grades: Record<LFIQuestionKey, LFIGradingResult>, drafts?: Record<LFIQuestionKey, string>, graded?: Record<LFIQuestionKey, string>) => {
     try {
       localStorage.setItem('lfi_user_answers', JSON.stringify(answers));
       localStorage.setItem('lfi_user_grades', JSON.stringify(grades));
+      if (drafts) localStorage.setItem('lfi_user_drafts', JSON.stringify(drafts));
+      if (graded) localStorage.setItem('lfi_graded_answers', JSON.stringify(graded));
     } catch (error) {
       console.log('Local storage save failed');
     }
@@ -198,13 +210,13 @@ export default function LFIStep() {
     try {
       console.log('Auto-saving draft for question:', questionKey, 'Answer length:', answerText.length);
       
-      // Save to local storage first (always works)
-      const newAnswers = {
-        ...userAnswers,
+      // Save draft separately from graded answers
+      const newDrafts = {
+        ...userDrafts,
         [questionKey]: answerText
       };
-      setUserAnswers(newAnswers);
-      saveToLocalStorage(newAnswers, userGrades);
+      setUserDrafts(newDrafts);
+      saveToLocalStorage(userAnswers, userGrades, newDrafts, gradedAnswers);
       console.log('Auto-save: Local storage updated');
 
       // Save to database if online
@@ -797,26 +809,17 @@ export default function LFIStep() {
         console.log('Loaded answers from database:', data.length, 'questions');
         console.log('Raw database data:', data);
         
-        const answers: Record<LFIQuestionKey, string> = {} as any;
+        const gradedAnswers: Record<LFIQuestionKey, string> = {} as any;
+        const drafts: Record<LFIQuestionKey, string> = {} as any;
         const grades: Record<LFIQuestionKey, LFIGradingResult> = {} as any;
 
-        // Get the latest answer for each question
-        const latestAnswers = new Map();
+        // Separate graded answers and drafts
         data.forEach((item: any) => {
           const questionKey = item.question_key as LFIQuestionKey;
-          if (!latestAnswers.has(questionKey) || 
-              new Date(item.created_at) > new Date(latestAnswers.get(questionKey).created_at)) {
-            latestAnswers.set(questionKey, item);
-          }
-        });
-
-        // Convert to the format expected by the component
-        latestAnswers.forEach((item: any, questionKey: LFIQuestionKey) => {
-          answers[questionKey] = item.answer_text;
           
-          // Only set grades for actual graded answers (score > 0)
-          // Drafts (score = 0) will have answers but no grades
           if (item.score > 0) {
+            // This is a graded answer
+            gradedAnswers[questionKey] = item.answer_text;
             grades[questionKey] = {
               score: item.score,
               label: item.label,
@@ -831,18 +834,22 @@ export default function LFIStep() {
                 depthBoost: 0
               }
             };
+          } else {
+            // This is a draft (score = 0)
+            drafts[questionKey] = item.answer_text;
           }
-          // If score = 0, it's a draft - we have the answer but no grade
         });
 
-        setUserAnswers(answers);
+        setGradedAnswers(gradedAnswers);
+        setUserDrafts(drafts);
         setUserGrades(grades);
         
-        console.log('Processed answers:', answers);
+        console.log('Processed graded answers:', gradedAnswers);
+        console.log('Processed drafts:', drafts);
         console.log('Processed grades:', grades);
         
         // Also save to local storage as backup
-        saveToLocalStorage(answers, grades);
+        saveToLocalStorage({} as Record<LFIQuestionKey, string>, grades, drafts, gradedAnswers);
         console.log('Successfully synced data from Supabase to local storage');
       } else {
         console.log('No answers found in database, checking local storage...');
@@ -859,19 +866,20 @@ export default function LFIStep() {
     
     // Check if there's a previous graded answer
     const existingGrade = userGrades[questionKey];
-    const existingAnswer = userAnswers[questionKey];
+    const existingGradedAnswer = gradedAnswers[questionKey];
+    const existingDraft = userDrafts[questionKey];
     
-    if (existingGrade && existingAnswer) {
+    if (existingGrade && existingGradedAnswer) {
       // There's a previous graded answer
-      setPreviousAnswer(existingAnswer);
+      setPreviousAnswer(existingGradedAnswer);
       setPreviousGrade(existingGrade);
-      setUserAnswer(""); // Start with empty input for new attempt
+      setUserAnswer(existingDraft || ""); // Load draft if exists, otherwise empty
       setIsNewAttempt(true);
-    } else if (existingAnswer) {
-      // There's a draft answer (no grade)
+    } else if (existingDraft) {
+      // There's a draft but no grade
       setPreviousAnswer("");
       setPreviousGrade(null);
-      setUserAnswer(existingAnswer); // Load the draft
+      setUserAnswer(existingDraft); // Load the draft
       setIsNewAttempt(false);
     } else {
       // No previous answer, start fresh
@@ -923,9 +931,9 @@ export default function LFIStep() {
 
   const handleNewAttempt = (questionKey: LFIQuestionKey) => {
     setSelectedQuestion(questionKey);
-    setPreviousAnswer(userAnswers[questionKey] || "");
+    setPreviousAnswer(gradedAnswers[questionKey] || "");
     setPreviousGrade(userGrades[questionKey] || null);
-    setUserAnswer("");
+    setUserAnswer(userDrafts[questionKey] || "");
     setIsNewAttempt(true);
     setGradingResult(null);
   };
@@ -960,20 +968,26 @@ export default function LFIStep() {
       console.log('Modal should be showing now');
 
       // Update local state first
-      const newAnswers = {
-        ...userAnswers,
+      // Move draft to graded answer and clear draft
+      const newGradedAnswers = {
+        ...gradedAnswers,
         [selectedQuestion]: userAnswer
       };
       const newGrades = {
         ...userGrades,
         [selectedQuestion]: result
       };
+      const newDrafts = {
+        ...userDrafts
+      };
+      delete newDrafts[selectedQuestion]; // Remove draft after grading
 
-      setUserAnswers(newAnswers);
+      setGradedAnswers(newGradedAnswers);
       setUserGrades(newGrades);
+      setUserDrafts(newDrafts);
 
       // Save to local storage
-      saveToLocalStorage(newAnswers, newGrades);
+      saveToLocalStorage(userAnswers, newGrades, newDrafts, newGradedAnswers);
 
       // Close the answer input modal
       setSelectedQuestion(null);
@@ -1345,12 +1359,14 @@ I am committed to maintaining these high standards throughout my career and unde
           <View style={styles.questionThemesList}>
             {questionThemes.map((theme, index) => {
               const IconComponent = theme.icon;
-              const hasAnswer = userAnswers[theme.key];
+              const hasGradedAnswer = gradedAnswers[theme.key];
+              const hasDraft = userDrafts[theme.key];
               const hasGrade = userGrades[theme.key];
+              const hasAnswer = hasGradedAnswer || hasDraft;
               return (
                 <View key={index} style={[
                   styles.questionThemeItem, 
-                  hasAnswer && hasGrade ? getQuestionCardStyle(hasGrade.label) : styles.questionThemeItemUnanswered
+                  hasGradedAnswer && hasGrade ? getQuestionCardStyle(hasGrade.label) : styles.questionThemeItemUnanswered
                 ]}>
                   <TouchableOpacity
                     style={styles.questionThemeMain}
@@ -1413,7 +1429,7 @@ I am committed to maintaining these high standards throughout my career and unde
                       <FileText size={16} color={Colors.primary} />
                       <Text style={styles.exampleButtonText}>View Example</Text>
                     </TouchableOpacity>
-                    {hasAnswer && hasGrade && (
+                    {hasGradedAnswer && hasGrade && (
                       <>
                         <TouchableOpacity
                           style={styles.reviewButton}
