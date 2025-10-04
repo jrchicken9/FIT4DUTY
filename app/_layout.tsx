@@ -122,6 +122,7 @@ function RootLayoutNav() {
       <Stack.Screen name="application/[step]/quiz" options={{ headerShown: false }} />
       <Stack.Screen name="application/police-service-selection" options={getBlueHeaderOptions("Select Police Services")} />
       <Stack.Screen name="profile-completion" options={getBlueHeaderOptions("Complete Profile")} />
+      <Stack.Screen name="profile/about" options={{ headerShown: false }} />
       
       {/* CPP System removed */}
       

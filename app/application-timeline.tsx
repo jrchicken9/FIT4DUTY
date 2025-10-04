@@ -237,13 +237,6 @@ export default function ApplicationTimelineScreen() {
                         ]}>
                           {step.description}
                         </Text>
-                        <Text style={[
-                          styles.stepEstimatedTime,
-                          isLocked && styles.stepEstimatedTimeLocked,
-                        ]}>
-                          <Clock size={12} color={isLocked ? Colors.textSecondary : Colors.textTertiary} />
-                          {step.estimatedTime}
-                        </Text>
                       </View>
                       
                       <ChevronRight 

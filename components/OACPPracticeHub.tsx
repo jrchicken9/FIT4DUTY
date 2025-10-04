@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   Animated,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { 
@@ -29,7 +30,17 @@ import {
   Timer,
   CheckCircle2,
   Lightbulb,
-  Smile
+  Smile,
+  Edit3,
+  FileText,
+  Building2,
+  MapPin,
+  Heart,
+  User,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle
 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { router } from 'expo-router';
@@ -58,7 +69,10 @@ const OACPPracticeHub: React.FC = () => {
   const [testStats, setTestStats] = useState<{[key: string]: { bestScore?: number; attempts?: number }}>({});
   const [loading, setLoading] = useState(true);
   const [attemptLimits, setAttemptLimits] = useState<{[key: string]: { current: number; max: number; resetDate?: string }}>({});
+  const [activeTab, setActiveTab] = useState<'overview' | 'practice'>('overview');
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const { user } = useAuth();
+  const { width } = Dimensions.get('window');
 
   const practiceTests: PracticeTest[] = [
     {
@@ -261,210 +275,386 @@ const OACPPracticeHub: React.FC = () => {
     }, [user?.id])
   );
 
+  const toggleSectionExpansion = (sectionId: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionId)) {
+      newExpanded.delete(sectionId);
+    } else {
+      newExpanded.add(sectionId);
+    }
+    setExpandedSections(newExpanded);
+  };
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Compact Header */}
-      <View style={styles.compactHeader}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Test Yourself!</Text>
+      {/* OACP Hero Card */}
+      <View style={styles.oacpHeroSection}>
+        <View style={styles.oacpHeroIcon}>
+          <Target size={32} color={Colors.white} strokeWidth={2} />
         </View>
-        <View style={styles.headerIcon}>
-          <Target size={24} color={Colors.primary} />
-        </View>
-      </View>
-
-      {/* Practice Tests Grid */}
-      <View style={styles.testsContainer}>
-        <Text style={styles.testsTitle}>Choose Your Practice Style</Text>
-        
-                {practiceTests.map((test) => (
-          <Animated.View
-            key={test.id}
-            style={[
-              test.id === 'daily-quiz' ? styles.quizCard : styles.testCard,
-              test.id === 'daily-quiz' && showPulse && { transform: [{ scale: pulseAnimation }] }
-            ]}
-          >
-            <TouchableOpacity
-              style={styles.testCardTouchable}
-              onPress={() => handleStartTest(test)}
-              activeOpacity={0.8}
-            >
-              {/* Fun Card Design */}
-              <View style={styles.funCardContent}>
-                {/* Type Badge */}
-                <View style={[
-                  styles.typeBadge,
-                  { backgroundColor: test.id === 'daily-quiz' ? Colors.success + '30' : Colors.primary + '30' }
-                ]}>
-                  <Text style={[
-                    styles.typeBadgeText,
-                    { color: test.id === 'daily-quiz' ? Colors.success : Colors.primary }
-                  ]}>
-                    {test.id === 'daily-quiz' ? 'QUIZ' : 'TEST'}
-                  </Text>
-                </View>
-                
-                {/* Icon and Title Row */}
-                <View style={styles.iconTitleRow}>
-                  <View style={[
-                    styles.testIcon,
-                    { backgroundColor: test.id === 'daily-quiz' ? Colors.success + '35' : Colors.primary + '35' }
-                  ]}>
-                    {test.id === 'daily-quiz' ? (
-                      <Calendar size={24} color={Colors.success} />
-                    ) : (
-                      <Target size={24} color={Colors.primary} />
-                    )}
-                  </View>
-                  <View style={styles.titleSection}>
-                    <Text style={styles.funTestTitle}>{test.title}</Text>
-                    <Text style={styles.funTestSubtitle}>{test.description}</Text>
-                  </View>
-                </View>
-
-                {/* Quick Stats Row */}
-                <View style={styles.quickStatsRow}>
-                  <View style={styles.quickStat}>
-                    <Clock size={16} color={Colors.textSecondary} />
-                    <Text style={styles.quickStatText}>{test.timeLimit}</Text>
-                  </View>
-                  <View style={styles.quickStat}>
-                    <Target size={16} color={Colors.textSecondary} />
-                    <Text style={styles.quickStatText}>{test.questions} questions</Text>
-                  </View>
-                  <View style={styles.quickStat}>
-                    <View style={[
-                      styles.difficultyChip,
-                      { backgroundColor: getDifficultyColor(test.difficulty) + '20' }
-                    ]}>
-                      <Text style={[
-                        styles.difficultyChipText,
-                        { color: getDifficultyColor(test.difficulty) }
-                      ]}>
-                        {test.difficulty}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Time Limit Info */}
-                <View style={styles.timeLimitInfo}>
-                  <Text style={styles.timeLimitText}>
-                    ⏱️ Timed test - {test.timeLimit} limit
-                  </Text>
-                </View>
-
-
-
-                              {/* Progress or Action */}
-              {loading ? (
-                <View style={styles.progressSection}>
-                  <Text style={styles.loadingText}>Loading stats...</Text>
-                </View>
-              ) : test.bestScore ? (
-                <View style={styles.progressSection}>
-                  <View style={styles.progressHeader}>
-                    <Text style={styles.progressLabel}>Your Best Score</Text>
-                    <Text style={styles.progressScore}>{test.bestScore}%</Text>
-                  </View>
-                  <View style={styles.progressBar}>
-                    <View 
-                      style={[
-                        styles.progressFill, 
-                        { width: `${getProgressPercentage(test)}%` }
-                      ]} 
-                    />
-                  </View>
-                  <Text style={styles.attemptsText}>{test.attempts} attempts</Text>
-                </View>
-              ) : (
-                <View style={styles.actionSection}>
-                  {(() => {
-                    const limit = attemptLimits[test.id];
-                    const isExhausted = limit && limit.current >= limit.max;
-                    
-                    if (isExhausted) {
-                      return (
-                        <View style={styles.lockedSection}>
-                          <View style={styles.lockedIcon}>
-                            <Text style={styles.lockedIconText}>🔒</Text>
-                          </View>
-                          <Text style={styles.lockedTitle}>Attempts Exhausted</Text>
-                          <Text style={styles.lockedMessage}>
-                            {test.id === 'sample-test' 
-                              ? `You've used all ${limit.max} attempts for this month.`
-                              : 'You\'ve completed today\'s quiz.'
-                            }
-                          </Text>
-                          {limit.resetDate && (
-                            <Text style={styles.resetInfo}>
-                              {test.id === 'sample-test' 
-                                ? `Resets on ${new Date(limit.resetDate).toLocaleDateString()}`
-                                : 'Resets daily at midnight'
-                              }
-                            </Text>
-                          )}
-                        </View>
-                      );
-                    }
-                    
-                    return (
-                      <TouchableOpacity 
-                        style={[
-                          styles.funStartButton,
-                          { backgroundColor: test.id === 'daily-quiz' ? Colors.success : Colors.primary }
-                        ]}
-                        onPress={() => handleStartTest(test)}
-                      >
-                        <Play size={18} color={Colors.white} />
-                        <Text style={styles.funStartButtonText}>
-                          {test.id === 'daily-quiz' ? 'Start Daily Quiz' : 'Start Sample Test'}
-                        </Text>
-                        <ArrowRight size={18} color={Colors.white} />
-                      </TouchableOpacity>
-                    );
-                  })()}
-                </View>
-              )}
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-        ))}
-      </View>
-
-      {/* OACP Description */}
-      <View style={styles.descriptionCard}>
-        <Text style={styles.descriptionText}>
-          Master the OACP Certificate test with our comprehensive practice suite. Practice with realistic questions and track your progress to prepare effectively for your police officer application.
+        <Text style={styles.oacpHeroTitle}>OACP Testing & Certification</Text>
+        <Text style={styles.oacpHeroSubtitle}>
+          Master the Ontario Association of Chiefs of Police certification test
         </Text>
       </View>
 
-      {/* Encouraging Tips */}
-      <View style={styles.tipsCard}>
-        <View style={styles.tipsHeader}>
-          <Lightbulb size={20} color={Colors.primary} />
-          <Text style={styles.tipsTitle}>You've Got This! 💪</Text>
-        </View>
-        <View style={styles.tipsList}>
-          <View style={styles.tipItem}>
-            <Text style={styles.tipNumber}>🎯</Text>
-            <Text style={styles.tipText}>Start with the Daily Quiz - it's just 5 quick questions to build confidence!</Text>
-          </View>
-          <View style={styles.tipItem}>
-            <Text style={styles.tipNumber}>📚</Text>
-            <Text style={styles.tipText}>Take the Sample Test when you're ready - it's the full experience without pressure</Text>
-          </View>
-          <View style={styles.tipItem}>
-            <Text style={styles.tipNumber}>🔄</Text>
-            <Text style={styles.tipText}>Don't worry about mistakes - they're just stepping stones to success</Text>
-          </View>
-          <View style={styles.tipItem}>
-            <Text style={styles.tipNumber}>⏰</Text>
-            <Text style={styles.tipText}>Take your time - there's no rush, and practice makes perfect!</Text>
-          </View>
+      {/* Enhanced Tab Navigation */}
+      <View style={styles.enhancedTabContainer}>
+        <View style={styles.tabBackground}>
+          {[
+            { key: 'overview', label: 'Overview', icon: Target },
+            { key: 'practice', label: 'Practice', icon: Edit3 },
+          ].map((tab, index) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[
+                styles.enhancedTabButton,
+                activeTab === tab.key && styles.enhancedTabButtonActive,
+                index === 0 && styles.firstTab,
+                index === 1 && styles.lastTab,
+              ]}
+              onPress={() => setActiveTab(tab.key as any)}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.tabIconContainer,
+                activeTab === tab.key && styles.tabIconContainerActive
+              ]}>
+                <tab.icon 
+                  size={20} 
+                  color={activeTab === tab.key ? Colors.white : Colors.gray[500]} 
+                />
+              </View>
+              <Text style={[
+                styles.enhancedTabButtonText,
+                activeTab === tab.key && styles.enhancedTabButtonTextActive
+              ]}>
+                {tab.label}
+              </Text>
+              {activeTab === tab.key && (
+                <View style={styles.activeTabIndicator} />
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
+
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <View style={styles.tabContent}>
+          {/* Key Assessment Areas Grid */}
+          <View style={styles.competenciesGrid}>
+            <Text style={styles.gridTitle}>Test Components</Text>
+            <View style={styles.gridContainer}>
+              <View style={styles.gridItem}>
+                <View style={styles.gridIcon}>
+                  <Brain size={20} color={Colors.primary} />
+                </View>
+                <Text style={styles.gridLabel}>Cognitive Ability</Text>
+              </View>
+              <View style={styles.gridItem}>
+                <View style={styles.gridIcon}>
+                  <Users size={20} color={Colors.primary} />
+                </View>
+                <Text style={styles.gridLabel}>Interpersonal Skills</Text>
+              </View>
+                <View style={styles.gridItem}>
+                  <View style={styles.gridIcon}>
+                    <Target size={20} color={Colors.primary} />
+                  </View>
+                  <Text style={styles.gridLabel}>Police Knowledge</Text>
+                </View>
+              <View style={styles.gridItem}>
+                <View style={styles.gridIcon}>
+                  <Lightbulb size={20} color={Colors.primary} />
+                </View>
+                <Text style={styles.gridLabel}>Problem Solving</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Test Process Overview */}
+          <View style={styles.processSection}>
+            <Text style={styles.processTitle}>Test Structure</Text>
+            <View style={styles.processSteps}>
+              <View style={styles.processStep}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>1</Text>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepTitle}>Registration</Text>
+                  <Text style={styles.stepDescription}>Register with OACP and pay the certification fee</Text>
+                </View>
+              </View>
+              <View style={styles.processStep}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>2</Text>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepTitle}>Written Test</Text>
+                  <Text style={styles.stepDescription}>Complete the comprehensive written examination</Text>
+                </View>
+              </View>
+              <View style={styles.processStep}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>3</Text>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepTitle}>Certification</Text>
+                  <Text style={styles.stepDescription}>Receive your OACP certification upon passing</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Quick Preparation Tips */}
+          <View style={styles.quickTipsSection}>
+            <Text style={styles.quickTipsTitle}>Preparation Strategy</Text>
+            <View style={styles.tipsGrid}>
+              <View style={styles.tipCard}>
+                <Brain size={16} color={Colors.primary} />
+                <Text style={styles.tipCardText}>Study cognitive patterns</Text>
+              </View>
+              <View style={styles.tipCard}>
+                <Clock size={16} color={Colors.primary} />
+                <Text style={styles.tipCardText}>Practice time management</Text>
+              </View>
+              <View style={styles.tipCard}>
+                <BookOpen size={16} color={Colors.primary} />
+                <Text style={styles.tipCardText}>Review police procedures</Text>
+              </View>
+              <View style={styles.tipCard}>
+                <Target size={16} color={Colors.primary} />
+                <Text style={styles.tipCardText}>Take practice tests</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Practice Tab Content */}
+      {activeTab === 'practice' && (
+        <View style={styles.tabContent}>
+          {/* Practice Tests Section */}
+          <View style={styles.practiceContent}>
+            <View style={styles.competenciesSection}>
+              <View style={styles.sectionHeader}>
+                <Target size={20} color={Colors.primary} />
+                <Text style={styles.sectionTitle}>Practice Tests</Text>
+              </View>
+              <Text style={styles.sectionDescription}>
+                Choose your practice style and track your progress
+              </Text>
+              
+              {practiceTests.map((test) => {
+                const isExpanded = expandedSections.has(test.id);
+                
+                return (
+                  <View
+                    key={test.id}
+                    style={[
+                      styles.enhancedTestCard,
+                      test.bestScore ? styles.testCardCompleted : {}
+                    ]}
+                  >
+                    <TouchableOpacity
+                      style={styles.testMainHeader}
+                      onPress={() => toggleSectionExpansion(test.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.testHeaderContent}>
+                        <View style={[
+                          styles.testIcon,
+                          { backgroundColor: test.id === 'daily-quiz' ? Colors.success : Colors.primary }
+                        ]}>
+                          {test.id === 'daily-quiz' ? (
+                            <Calendar size={24} color={Colors.white} strokeWidth={2} />
+                          ) : (
+                            <Target size={24} color={Colors.white} strokeWidth={2} />
+                          )}
+                        </View>
+                        
+                        <View style={styles.testInfo}>
+                          <Text style={styles.testTitle}>{test.title}</Text>
+                          
+                          <View style={styles.testStatusRow}>
+                            <View style={[
+                              styles.testStatusBadge,
+                              {
+                                backgroundColor: test.bestScore ? Colors.success + '20' : Colors.gray[100],
+                                borderColor: test.bestScore ? Colors.success : Colors.gray[200]
+                              }
+                            ]}>
+                              <View style={[
+                                styles.statusIndicator,
+                                {
+                                  backgroundColor: test.bestScore ? Colors.success : Colors.gray[400]
+                                }
+                              ]} />
+                              <Text style={[
+                                styles.statusText,
+                                {
+                                  color: test.bestScore ? Colors.success : Colors.gray[600]
+                                }
+                              ]}>
+                                {test.bestScore ? 'Completed' : 'Available'}
+                              </Text>
+                            </View>
+                          </View>
+                          
+                          <Text style={styles.testDescription}>{test.description}</Text>
+                        </View>
+                        
+                        <TouchableOpacity style={styles.expandIcon}>
+                          {isExpanded ? (
+                            <ChevronUp size={20} color={Colors.gray[500]} />
+                          ) : (
+                            <ChevronDown size={20} color={Colors.gray[500]} />
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </TouchableOpacity>
+                    
+                    {isExpanded && (
+                      <View style={styles.testExpandedContent}>
+                        <View style={styles.testDetailsSection}>
+                          <Text style={styles.detailsLabel}>Test Details</Text>
+                          <View style={styles.detailsGrid}>
+                            <View style={styles.detailItem}>
+                              <Clock size={16} color={Colors.primary} />
+                              <Text style={styles.detailText}>{test.timeLimit}</Text>
+                            </View>
+                            <View style={styles.detailItem}>
+                              <Target size={16} color={Colors.primary} />
+                              <Text style={styles.detailText}>{test.questions} questions</Text>
+                            </View>
+                            <View style={styles.detailItem}>
+                              <View style={[
+                                styles.difficultyChip,
+                                { backgroundColor: getDifficultyColor(test.difficulty) + '20' }
+                              ]}>
+                                <Text style={[
+                                  styles.difficultyChipText,
+                                  { color: getDifficultyColor(test.difficulty) }
+                                ]}>
+                                  {test.difficulty}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+                        
+                        <View style={styles.testActions}>
+                          <View style={styles.verticalActions}>
+                            {loading ? (
+                              <View style={styles.progressSection}>
+                                <Text style={styles.loadingText}>Loading stats...</Text>
+                              </View>
+                            ) : test.bestScore ? (
+                              <View style={styles.progressSection}>
+                                <View style={styles.progressHeader}>
+                                  <Text style={styles.progressLabel}>Your Best Score</Text>
+                                  <Text style={styles.progressScore}>{test.bestScore}%</Text>
+                                </View>
+                                <View style={styles.progressBar}>
+                                  <View 
+                                    style={[
+                                      styles.progressFill, 
+                                      { width: `${getProgressPercentage(test)}%` }
+                                    ]} 
+                                  />
+                                </View>
+                                <Text style={styles.attemptsText}>{test.attempts} attempts</Text>
+                              </View>
+                            ) : (
+                              <View style={styles.actionSection}>
+                                {(() => {
+                                  const limit = attemptLimits[test.id];
+                                  const isExhausted = limit && limit.current >= limit.max;
+                                  
+                                  if (isExhausted) {
+                                    return (
+                                      <View style={styles.lockedSection}>
+                                        <View style={styles.lockedIcon}>
+                                          <Text style={styles.lockedIconText}>🔒</Text>
+                                        </View>
+                                        <Text style={styles.lockedTitle}>Attempts Exhausted</Text>
+                                        <Text style={styles.lockedMessage}>
+                                          {test.id === 'sample-test' 
+                                            ? `You've used all ${limit.max} attempts for this month.`
+                                            : 'You\'ve completed today\'s quiz.'
+                                          }
+                                        </Text>
+                                        {limit.resetDate && (
+                                          <Text style={styles.resetInfo}>
+                                            {test.id === 'sample-test' 
+                                              ? `Resets on ${new Date(limit.resetDate).toLocaleDateString()}`
+                                              : 'Resets daily at midnight'
+                                            }
+                                          </Text>
+                                        )}
+                                      </View>
+                                    );
+                                  }
+                                  
+                                  return (
+                                    <TouchableOpacity 
+                                      style={[
+                                        styles.fullWidthButton,
+                                        { backgroundColor: test.id === 'daily-quiz' ? Colors.success : Colors.primary }
+                                      ]}
+                                      onPress={() => handleStartTest(test)}
+                                    >
+                                      <View style={styles.buttonContent}>
+                                        <Play size={16} color={Colors.white} />
+                                        <Text style={styles.buttonText}>
+                                          {test.id === 'daily-quiz' ? 'Start Daily Quiz' : 'Start Sample Test'}
+                                        </Text>
+                                      </View>
+                                    </TouchableOpacity>
+                                  );
+                                })()}
+                              </View>
+                            )}
+                            
+                            <View style={styles.horizontalActions}>
+                              <TouchableOpacity
+                                style={styles.halfWidthButton}
+                                onPress={() => {
+                                  // Handle tips
+                                }}
+                                activeOpacity={0.8}
+                              >
+                                <View style={styles.buttonContent}>
+                                  <HelpCircle size={14} color={Colors.white} />
+                                  <Text style={styles.buttonText}>Tips</Text>
+                                </View>
+                              </TouchableOpacity>
+                              
+                              <TouchableOpacity
+                                style={styles.halfWidthButton}
+                                onPress={() => {
+                                  // Handle review
+                                }}
+                                activeOpacity={0.8}
+                              >
+                                <View style={styles.buttonContent}>
+                                  <BookOpen size={14} color={Colors.white} />
+                                  <Text style={styles.buttonText}>Review</Text>
+                                </View>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -473,386 +663,495 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    padding: 16,
   },
-  welcomeCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 5,
+  contentContainer: {
+    padding: 20,
+    paddingBottom: 40,
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
   },
-  welcomeContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+  // OACP Hero Section
+  oacpHeroSection: {
+    backgroundColor: Colors.primary,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 20,
-  },
-  welcomeLeft: {
-    flex: 1,
-    marginRight: 16,
-  },
-  welcomeHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  welcomeTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.text,
-    flex: 1,
-  },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    lineHeight: 24,
-  },
-  welcomeIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.primary + '15',
-    alignItems: 'center',
+  oacpHeroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
-  },
-  quickStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  quickStatItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  compactHeader: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 16,
     marginBottom: 12,
+  },
+  oacpHeroTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: Colors.white,
+    marginBottom: 6,
+    letterSpacing: -0.5,
+    textAlign: 'center',
+  },
+  oacpHeroSubtitle: {
+    fontSize: 14,
+    color: Colors.white,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontWeight: '400',
+    opacity: 0.9,
+    letterSpacing: 0.1,
+  },
+  // Enhanced Tab Navigation
+  enhancedTabContainer: {
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  tabBackground: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 6,
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  headerLeft: {
+  enhancedTabButton: {
     flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    position: 'relative',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 2,
+  enhancedTabButtonActive: {
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
+  firstTab: {
+    marginRight: 3,
   },
-  headerIcon: {
+  lastTab: {
+    marginLeft: 3,
+  },
+  tabIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primary + '10',
-    alignItems: 'center',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
-  },
-
-
-  statsRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    marginBottom: 8,
   },
-  statItem: {
-    alignItems: 'center',
+  tabIconContainerActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  statNumber: {
+  enhancedTabButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    textAlign: 'center',
+    letterSpacing: -0.1,
+  },
+  enhancedTabButtonTextActive: {
+    color: Colors.white,
+    fontWeight: '700',
+    letterSpacing: -0.1,
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: -2,
+    left: '50%',
+    marginLeft: -8,
+    width: 16,
+    height: 3,
+    backgroundColor: Colors.white,
+    borderRadius: 2,
+  },
+  tabContent: {
+    flex: 1,
+  },
+  // Grid Layout
+  competenciesGrid: {
+    marginBottom: 24,
+  },
+  gridTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.primary,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: Colors.gray[200],
-  },
-
-  testsContainer: {
+    color: '#1f2937',
     marginBottom: 16,
+    letterSpacing: -0.2,
   },
-  testsTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 16,
-  },
-  testCard: {
-    backgroundColor: Colors.primary + '25',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.primary,
-    borderWidth: 1,
-    borderColor: Colors.primary + '30',
-  },
-  quizCard: {
-    backgroundColor: Colors.success + '25',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.success,
-    borderWidth: 1,
-    borderColor: Colors.success + '30',
-  },
-  testCardTouchable: {
-    flex: 1,
-  },
-  funCardContent: {
-    gap: 8,
-  },
-  typeBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  typeBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  iconTitleRow: {
+  gridContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  testIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  titleSection: {
-    flex: 1,
-  },
-  funTestTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 2,
-  },
-  funTestSubtitle: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-  },
-  quickStatsRow: {
-    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
-  quickStat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  quickStatText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  difficultyChip: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  difficultyChipText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  funStartButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  gridItem: {
+    width: '47%',
+    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
-    gap: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    minHeight: 100,
   },
-  funStartButtonText: {
-    fontSize: 16,
+  gridIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  gridLabel: {
+    fontSize: 14,
     fontWeight: '600',
+    color: '#1f2937',
+    textAlign: 'center',
+    letterSpacing: -0.1,
+  },
+  // Process Section
+  processSection: {
+    marginBottom: 24,
+  },
+  processTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 16,
+    letterSpacing: -0.2,
+  },
+  processSteps: {
+    gap: 16,
+  },
+  processStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  stepNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  stepNumberText: {
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.white,
   },
-  loadingText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
+  stepContent: {
+    flex: 1,
   },
-  timeLimitInfo: {
-    marginTop: 6,
-    padding: 6,
-    backgroundColor: Colors.primary + '10',
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  timeLimitText: {
-    fontSize: 11,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  lockedSection: {
-    alignItems: 'center',
-    padding: 12,
-    backgroundColor: Colors.gray[50],
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-  },
-  lockedIcon: {
-    marginBottom: 6,
-  },
-  lockedIconText: {
-    fontSize: 20,
-  },
-  lockedTitle: {
-    fontSize: 14,
+  stepTitle: {
+    fontSize: 16,
     fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 3,
+    color: '#1f2937',
+    marginBottom: 4,
+    letterSpacing: -0.1,
   },
-  lockedMessage: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 6,
+  stepDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    lineHeight: 20,
+    fontWeight: '400',
+    letterSpacing: 0.1,
   },
-  resetInfo: {
-    fontSize: 12,
-    color: Colors.primary,
-    fontWeight: '500',
+  // Quick Tips Section
+  quickTipsSection: {
+    marginBottom: 24,
   },
-  descriptionCard: {
+  quickTipsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 16,
+    letterSpacing: -0.2,
+  },
+  tipsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  tipCard: {
+    width: '47%',
     backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    minHeight: 60,
+  },
+  tipCardText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginLeft: 8,
+    letterSpacing: -0.1,
+  },
+  // Practice Content
+  practiceContent: {
+    gap: 20,
+  },
+  competenciesSection: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginLeft: 12,
+    flex: 1,
+    letterSpacing: -0.3,
+  },
+  sectionDescription: {
+    fontSize: 15,
+    color: '#1a1a1a',
+    marginBottom: 24,
+    lineHeight: 22,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+  // Enhanced Test Cards
+  enhancedTestCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
     marginBottom: 16,
-    shadowColor: '#000',
+    overflow: 'hidden',
+    borderWidth: 0,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+    width: '100%',
+    maxWidth: '100%',
+    alignSelf: 'center',
+  },
+  testCardCompleted: {
+    borderWidth: 2,
+    borderColor: Colors.success,
+    shadowColor: Colors.success,
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  testMainHeader: {
+    padding: 16,
+    maxWidth: '100%',
+  },
+  testHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+    maxWidth: '100%',
+  },
+  testIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  descriptionText: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  testHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  testHeaderLeft: {
+  testInfo: {
     flex: 1,
+    maxWidth: '100%',
   },
   testTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1f2937',
+    letterSpacing: -0.2,
+    lineHeight: 22,
     marginBottom: 4,
+  },
+  testStatusRow: {
+    marginBottom: 8,
+  },
+  testStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  statusIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   testDescription: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: '#6b7280',
     lineHeight: 20,
+    marginBottom: 8,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+    flexWrap: 'wrap',
   },
-  testHeaderRight: {
-    alignItems: 'flex-end',
-    gap: 8,
+  expandIcon: {
+    marginLeft: 12,
+    padding: 4,
   },
-  newBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.success,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+  testExpandedContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 12,
+    backgroundColor: Colors.gray[50],
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray[100],
+    maxWidth: '100%',
   },
-  newBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: Colors.white,
-  },
-  premiumBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.warning + '20',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  premiumBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: Colors.warning,
-  },
-  testDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  testDetailsSection: {
     marginBottom: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.gray[100],
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  detailsLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.1,
+    color: Colors.primary,
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 16,
   },
-  testDetailItem: {
+  detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  testDetailText: {
+  detailText: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    fontWeight: '500',
+    color: '#1a1a1a',
+    letterSpacing: 0.1,
   },
-  difficultyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+  testActions: {
+    marginTop: 8,
   },
-  difficultyText: {
-    fontSize: 12,
+  verticalActions: {
+    gap: 12,
+  },
+  horizontalActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  fullWidthButton: {
+    backgroundColor: Colors.success,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    shadowColor: Colors.success,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  halfWidthButton: {
+    backgroundColor: Colors.gray[600],
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    shadowColor: Colors.gray[600],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+    flex: 1,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  buttonText: {
+    color: Colors.white,
+    fontSize: 14,
     fontWeight: '600',
+    letterSpacing: -0.1,
   },
+  // Progress and Stats
   progressSection: {
     marginTop: 8,
   },
@@ -889,72 +1188,51 @@ const styles = StyleSheet.create({
   actionSection: {
     marginTop: 8,
   },
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
+  difficultyChip: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
-  startButtonPremium: {
-    backgroundColor: Colors.warning + '20',
-  },
-  startButtonText: {
-    fontSize: 16,
+  difficultyChipText: {
+    fontSize: 10,
     fontWeight: '600',
-    color: Colors.white,
   },
-  startButtonTextPremium: {
-    color: Colors.warning,
-  },
-  tipsCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  tipsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  tipsTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-    marginLeft: 8,
-  },
-  tipsList: {
-    gap: 12,
-  },
-  tipItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  tipNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primary + '15',
-    color: Colors.primary,
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 32,
-    marginRight: 12,
-  },
-  tipText: {
-    flex: 1,
+  loadingText: {
     fontSize: 14,
     color: Colors.textSecondary,
-    lineHeight: 20,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  lockedSection: {
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: Colors.gray[50],
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.gray[200],
+  },
+  lockedIcon: {
+    marginBottom: 6,
+  },
+  lockedIconText: {
+    fontSize: 20,
+  },
+  lockedTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 3,
+  },
+  lockedMessage: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  resetInfo: {
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: '500',
   },
 });
 

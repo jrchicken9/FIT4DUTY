@@ -4,7 +4,7 @@ import { Shield, Star } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 
 interface LogoProps {
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
   variant?: 'light' | 'dark' | 'primary';
   showText?: boolean;
   style?: ViewStyle;
@@ -31,6 +31,20 @@ export default function Logo({
           fontSize: 32,
           containerSize: 64,
           spacing: 16,
+        };
+      case 'xlarge':
+        return {
+          iconSize: 50,
+          fontSize: 40,
+          containerSize: 80,
+          spacing: 12,
+        };
+      case 'xxlarge':
+        return {
+          iconSize: 60,
+          fontSize: 48,
+          containerSize: 96,
+          spacing: 24,
         };
       default: // medium
         return {

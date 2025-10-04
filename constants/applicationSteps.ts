@@ -146,7 +146,7 @@ const applicationSteps: ApplicationStep[] = [
   },
   {
     id: "oacp",
-    title: "OACP Certificate",
+    title: "OACP Testing & Certification",
     description: "Master the OACP Certificate test with practice questions and progress tracking.",
     requirements: [
       "Complete written test",
@@ -271,7 +271,7 @@ const applicationSteps: ApplicationStep[] = [
   },
   {
     id: "prep-fitness-test",
-    title: "PREP Fitness Test",
+    title: "Physical Readiness Evaluation (PREP)",
     description: "Physical Readiness Evaluation for Police (PREP) test for police work.",
     requirements: [
       "Shuttle run to level 6.5",
@@ -404,7 +404,7 @@ const applicationSteps: ApplicationStep[] = [
   },
   {
     id: "eci-panel-interview",
-    title: "ECI/Panel Interview",
+    title: "Essential Competency Interview (In-Depth)",
     description: "Essential Competency Interview (ECI) assesses competencies through behavioral questions.",
     requirements: [
       "Professional attire",

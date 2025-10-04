@@ -62,7 +62,7 @@ const ApplicationStepCard = ({
         return {
           icon: <Target size={24} color={Colors.primary} />,
           features: ['PREP Test Guide', 'Training Plans', 'Fitness Tab Access'],
-          highlight: 'Fitness Training',
+          highlight: 'Fitness & Training',
           color: Colors.accent
         };
       case 'lfi-interview':
@@ -71,6 +71,13 @@ const ApplicationStepCard = ({
           features: ['Practice Questions', 'Community Knowledge', 'Personal Motivation', 'Situational Ethics'],
           highlight: 'Interview Prep',
           color: Colors.secondary
+        };
+      case 'eci-panel-interview':
+        return {
+          icon: <Target size={24} color={Colors.primary} />,
+          features: ['STAR Method Practice', 'Competency Examples', 'Behavioral Questions', 'Interview Simulation'],
+          highlight: 'ECI Prep',
+          color: Colors.accent
         };
       default:
         return {
@@ -135,10 +142,6 @@ const ApplicationStepCard = ({
         </View>
 
         <View style={styles.footer}>
-          <View style={styles.timeContainer}>
-            <Clock size={16} color={Colors.textSecondary} />
-            <Text style={styles.timeText}>{step.estimatedTime}</Text>
-          </View>
           <View style={styles.arrowContainer}>
             <Text style={styles.exploreText}>Explore</Text>
             <ChevronRight size={16} color={Colors.primary} />

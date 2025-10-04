@@ -28,6 +28,7 @@ import PoliceServiceApplication from "@/components/PoliceServiceApplication";
 import PoliceServiceSelectionModal from "@/components/PoliceServiceSelectionModal";
 import PREPFitnessTestStep from "@/components/PREPFitnessTestStep";
 import LFIStep from "@/components/LFIStep";
+import ECIStep from "@/components/ECIStep";
 import PoliceThemeBackground from "@/components/PoliceThemeBackground";
 import ProfessionalBackground from "@/components/ProfessionalBackground";
 import applicationSteps from "@/constants/applicationSteps";
@@ -139,7 +140,14 @@ export default function ApplicationStepDetailScreen() {
     );
   }
 
+  // Early return for custom component steps that handle their own layout
+  if (resolvedStepId === 'lfi-interview') {
+    return <LFIStep />;
+  }
 
+  if (resolvedStepId === 'eci-panel-interview') {
+    return <ECIStep />;
+  }
 
   const handleSaveNotes = () => {
     updateStepNotes(stepData.id, notes);
@@ -172,8 +180,8 @@ export default function ApplicationStepDetailScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-      {/* Show header for all steps except application, pre-application-prep, oacp, prerequisites, and prep-fitness-test */}
-      {resolvedStepId !== 'application' && resolvedStepId !== 'pre-application-prep' && resolvedStepId !== 'oacp' && resolvedStepId !== 'prerequisites' && resolvedStepId !== 'prep-fitness-test' && (
+      {/* Show header for all steps except application, pre-application-prep, oacp, prerequisites, prep-fitness-test, lfi-interview, and eci-panel-interview */}
+      {resolvedStepId !== 'application' && resolvedStepId !== 'pre-application-prep' && resolvedStepId !== 'oacp' && resolvedStepId !== 'prerequisites' && resolvedStepId !== 'prep-fitness-test' && resolvedStepId !== 'lfi-interview' && resolvedStepId !== 'eci-panel-interview' && (
         <>
           <View style={styles.header}>
             <View style={styles.titleContainer}>
@@ -279,43 +287,11 @@ export default function ApplicationStepDetailScreen() {
             </View>
           </View>
 
-          {/* OACP Resources Section */}
-          <View style={styles.oacpResourcesContainer}>
-            <Text style={styles.oacpSectionTitle}>Official Resources</Text>
-            <View style={styles.oacpResourcesList}>
-              <TouchableOpacity
-                style={styles.oacpResourceItem}
-                onPress={() => handleOpenLink('https://www.oacp.ca/')}
-              >
-                <FileText size={20} color={Colors.primary} />
-                <View style={styles.oacpResourceContent}>
-                  <Text style={styles.oacpResourceTitle}>OACP Official Website</Text>
-                  <Text style={styles.oacpResourceDesc}>Official information and application portal</Text>
-                </View>
-                <ExternalLink size={16} color={Colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.oacpResourceItem}
-                onPress={() => handleOpenLink('https://www.oacpcertificate.ca/')}
-              >
-                <FileText size={20} color={Colors.primary} />
-                <View style={styles.oacpResourceContent}>
-                  <Text style={styles.oacpResourceTitle}>Certificate Application</Text>
-                  <Text style={styles.oacpResourceDesc}>Direct link to the certificate application</Text>
-                </View>
-                <ExternalLink size={16} color={Colors.primary} />
-              </TouchableOpacity>
-            </View>
-          </View>
         </>
       )}
 
       {resolvedStepId === 'prep-fitness-test' && (
         <PREPFitnessTestStep />
-      )}
-
-      {resolvedStepId === 'lfi-interview' && (
-        <LFIStep />
       )}
 
       {resolvedStepId === 'application' && selectedServiceId && (
@@ -331,7 +307,7 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && (
+      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && stepData.id !== 'eci-panel-interview' && (
         <View style={styles.requirementsContainer}>
           <Text style={styles.sectionTitle}>Requirements</Text>
           {stepData.requirements.map((requirement, index) => (
@@ -342,7 +318,7 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && (
+      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && stepData.id !== 'eci-panel-interview' && (
         <View style={styles.tipsContainer}>
           <Text style={styles.sectionTitle}>Tips</Text>
           {stepData.tips.map((tip, index) => (
@@ -356,7 +332,7 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && stepData.resources.length > 0 && (
+      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && stepData.id !== 'eci-panel-interview' && stepData.resources.length > 0 && (
         <View style={styles.resourcesContainer}>
           <Text style={styles.sectionTitle}>Resources</Text>
           {stepData.resources.map((resource, index) => (
@@ -374,7 +350,7 @@ export default function ApplicationStepDetailScreen() {
       )}
 
       {/* Monthly Step Test Entry (hidden for pre-application-prep, application, and lfi-interview) */}
-      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && (
+      {!(resolvedStepId === 'pre-application-prep' || numericStep === 2) && stepData.id !== 'pre-application-prep' && stepData.id !== 'prerequisites' && stepData.id !== 'oacp' && stepData.id !== 'application' && stepData.id !== 'prep-fitness-test' && stepData.id !== 'lfi-interview' && stepData.id !== 'eci-panel-interview' && (
         <View style={styles.testCardContainer}>
           <View style={styles.testCardHeader}>
             <Text style={styles.sectionTitle}>Monthly Step Test</Text>
@@ -400,89 +376,7 @@ export default function ApplicationStepDetailScreen() {
         </View>
       )}
 
-      {stepData.nextSteps.length > 0 && resolvedStepId !== 'prerequisites' && resolvedStepId !== 'prep-fitness-test' && resolvedStepId !== 'lfi-interview' && (
-        <View style={styles.nextStepsContainer}>
-          <Text style={styles.sectionTitle}>Next Steps</Text>
-          {stepData.nextSteps.map((nextStepId) => {
-            const nextStep = applicationSteps.find((s) => s.id === nextStepId);
-            if (!nextStep) return null;
-            
-            return (
-              <TouchableOpacity
-                key={nextStepId}
-                style={styles.nextStepItem}
-                onPress={() => handleNextStep(nextStepId)}
-              >
-                <View style={styles.nextStepContent}>
-                  <Text style={styles.nextStepTitle}>{nextStep.title}</Text>
-                  <Text style={styles.nextStepDescription} numberOfLines={2}>
-                    {nextStep.description}
-                  </Text>
-                </View>
-                <ChevronRight size={20} color={Colors.primary} />
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      )}
 
-      {/* Notes Section - Hidden for prep-fitness-test and lfi-interview */}
-      {resolvedStepId !== 'prep-fitness-test' && resolvedStepId !== 'lfi-interview' && (
-        <View style={styles.notesContainer}>
-          <View style={styles.notesHeader}>
-            <Text style={styles.sectionTitle}>Notes</Text>
-            {!isEditingNotes && (
-              <TouchableOpacity
-                onPress={() => setIsEditingNotes(true)}
-                style={styles.editButton}
-              >
-                <Edit3 size={16} color={Colors.primary} />
-                <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          
-          {isEditingNotes ? (
-            <View style={styles.notesEditContainer}>
-              <TextInput
-                style={styles.notesInput}
-                value={notes}
-                onChangeText={setNotes}
-                placeholder="Add your notes about this step..."
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-              <View style={styles.notesActions}>
-                <Button
-                  title="Cancel"
-                  onPress={handleCancelNotes}
-                  variant="outline"
-                  size="small"
-                  style={styles.notesActionButton}
-                />
-                <Button
-                  title={isSaving ? "Saving..." : "Save"}
-                  onPress={handleSaveNotes}
-                  size="small"
-                  style={styles.notesActionButton}
-                  disabled={isSaving}
-                />
-              </View>
-            </View>
-          ) : (
-            <View style={styles.notesDisplay}>
-              {notes ? (
-                <Text style={styles.notesText}>{notes}</Text>
-              ) : (
-                <Text style={styles.notesPlaceholder}>
-                  No notes added yet. Tap Edit to add notes about your progress.
-                </Text>
-              )}
-            </View>
-          )}
-        </View>
-      )}
 
       {/* Police Service Selection Modal */}
       <PoliceServiceSelectionModal

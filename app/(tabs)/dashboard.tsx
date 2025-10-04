@@ -37,6 +37,7 @@ import {
 } from "lucide-react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from "@/constants/colors";
+import { BRAND } from "@/app/constants/branding";
 import { spacing } from "@/constants/designSystem";
 import { useAuth } from "@/context/AuthContext";
 import { useApplication } from "@/context/ApplicationContext";
@@ -430,6 +431,12 @@ export default function DashboardScreen() {
               <View style={styles.welcomeTextContainer}>
                 <Text style={styles.welcomeTitle}>{getGreeting()}</Text>
                 <Text style={styles.welcomeName}>{formattedName}</Text>
+                
+                {/* NEW: subhead communicates the broader mission beyond fitness */}
+                <Text style={{ marginTop: 6, fontSize: 13, color: Colors.white + 'CC' }}>
+                  {BRAND.taglineShort}
+                </Text>
+                
                 <View style={styles.welcomeBadge}>
                   <Shield size={14} color={Colors.white} />
                   <Text style={styles.welcomeBadgeText}>Police Applicant</Text>

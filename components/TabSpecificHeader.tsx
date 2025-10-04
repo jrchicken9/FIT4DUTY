@@ -169,7 +169,7 @@ export default function TabSpecificHeader({ tab, stats }: TabSpecificHeaderProps
             <Activity size={sizes.sm} color={Colors.white} style={styles.fitnessOverlay} />
           </View>
           <View style={styles.fitnessInfo}>
-            <Text style={styles.fitnessTitle}>Fitness Training</Text>
+            <Text style={styles.fitnessTitle}>Fitness & Training</Text>
             <Text style={styles.fitnessSubtitle}>Build strength and endurance for success</Text>
             {stats && (
               <View style={styles.fitnessStats}>

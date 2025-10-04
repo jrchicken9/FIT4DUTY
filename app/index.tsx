@@ -10,6 +10,7 @@ import {
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
+import { BRAND } from '@/app/constants/branding';
 import { useAuth } from '@/context/AuthContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import PoliceThemeBackground from '@/components/PoliceThemeBackground';
@@ -96,13 +97,13 @@ export default function WelcomeScreen() {
         >
           <View style={styles.content}>
             <View style={styles.header}>
-              <Logo size="large" variant="light" />
+              <Logo size="xlarge" variant="light" />
             </View>
             
             <View style={styles.heroSection}>
-              <Text style={styles.title}>Police Fitness Training</Text>
+              <Text style={styles.title}>{BRAND.mainTitle}</Text>
               <Text style={styles.subtitle}>
-                Prepare for duty. Train like a professional.
+                {BRAND.taglineShort}
               </Text>
             </View>
             
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
 
   heroSection: {
@@ -159,16 +160,16 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   title: {
-    fontSize: 48,
+    fontSize: 36,
     fontWeight: 'bold',
     color: Colors.white,
-    lineHeight: 52,
-    marginBottom: 16,
+    lineHeight: 40,
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 17,
     color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 24,
+    lineHeight: 23,
     maxWidth: '90%',
   },
   buttonContainer: {

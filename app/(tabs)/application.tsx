@@ -341,7 +341,7 @@ export default function ApplicationTab() {
               style={styles.modalOption}
               onPress={() => handleSelectInterview('eci')}
             >
-              <Text style={styles.modalOptionTitle}>Psychological Interview (ECI/Panel)</Text>
+              <Text style={styles.modalOptionTitle}>Essential Competency Interview (In-Depth)</Text>
               <Text style={styles.modalOptionSubtitle}>Competencies, STAR method, examples</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -442,7 +442,7 @@ export default function ApplicationTab() {
                 router.push('/application/oacp' as any);
               }}
             >
-              <Text style={styles.modalOptionTitle}>OACP Test</Text>
+              <Text style={styles.modalOptionTitle}>OACP Testing & Certification</Text>
               <Text style={styles.modalOptionSubtitle}>Practice questions, strategies, and full simulations</Text>
             </TouchableOpacity>
 

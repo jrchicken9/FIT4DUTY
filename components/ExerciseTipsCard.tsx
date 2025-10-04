@@ -456,7 +456,7 @@ const genericTips: ExerciseTip[] = [
   {
     id: 'generic-6',
     type: 'tip',
-    title: 'Police Fitness Focus',
+    title: 'Police Applicant Fitness Focus',
     content: 'Remember: every rep brings you closer to your goal of serving and protecting your community.',
     icon: 'target',
     category: 'motivation'

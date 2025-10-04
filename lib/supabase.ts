@@ -499,6 +499,53 @@ export interface Database {
           updated_at?: string;
         };
       };
+      user_eci_answers: {
+        Row: {
+          id: string;
+          user_id: string;
+          question_key: string;
+          answer_text: string;
+          is_draft: boolean;
+          score: number;
+          label: string;
+          notes: string[];
+          tips: string[];
+          detected: any;
+          service_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          question_key: string;
+          answer_text: string;
+          is_draft?: boolean;
+          score?: number;
+          label?: string;
+          notes?: string[];
+          tips?: string[];
+          detected?: any;
+          service_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          question_key?: string;
+          answer_text?: string;
+          is_draft?: boolean;
+          score?: number;
+          label?: string;
+          notes?: string[];
+          tips?: string[];
+          detected?: any;
+          service_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }

@@ -47,7 +47,7 @@ export default function PREPFitnessTestStep() {
           <View style={styles.heroIconContainer}>
             <Target size={32} color={Colors.white} />
           </View>
-          <Text style={styles.heroTitle}>PREP Fitness Test</Text>
+          <Text style={styles.heroTitle}>Physical Readiness Evaluation (PREP)</Text>
           <Text style={styles.heroSubtitle}>
             Physical Readiness Evaluation for Police
           </Text>

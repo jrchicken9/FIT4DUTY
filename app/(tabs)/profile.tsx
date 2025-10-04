@@ -27,7 +27,8 @@ import {
   X, 
   Phone, 
   Calendar, 
-  Mail 
+  Mail,
+  Info
 } from "lucide-react-native";
 import PoliceThemeBackground from "@/components/PoliceThemeBackground";
 import ProfessionalBackground from "@/components/ProfessionalBackground";
@@ -166,6 +167,15 @@ export default function ProfileScreen() {
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>Reset Password</Text>
                 <Text style={styles.settingDescription}>Change your password</Text>
+              </View>
+              <ChevronRight size={16} color={Colors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/profile/about')}>
+              <Info size={20} color={Colors.primary} />
+              <View style={styles.settingContent}>
+                <Text style={styles.settingTitle}>About us</Text>
+                <Text style={styles.settingDescription}>Learn about our mission and purpose</Text>
               </View>
               <ChevronRight size={16} color={Colors.textSecondary} />
             </TouchableOpacity>

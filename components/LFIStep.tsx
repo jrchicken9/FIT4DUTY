@@ -8,7 +8,10 @@ import {
   TextInput,
   Modal,
   Alert,
+  Animated,
+  Dimensions,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Users,
   FileText,
@@ -29,6 +32,22 @@ import {
   MessageSquare,
   X,
   Eye,
+  Shield,
+  RefreshCw,
+  BookOpen,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  Filter,
+  Play,
+  Award,
+  Zap,
+  Bookmark,
+  Building2,
+  MapPin,
+  Heart,
+  User,
 } from "lucide-react-native";
 import Colors from "@/constants/colors";
 import { LFI_CRITERIA, LFI_QUESTION_THEMES } from "@/constants/lfiCriteria";
@@ -61,6 +80,13 @@ export default function LFIStep() {
   const scrollViewRef = useRef<ScrollView>(null);
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
+  // New state for enhanced UX
+  const [expandedCompetencies, setExpandedCompetencies] = useState<Set<LFIQuestionKey>>(new Set());
+  const [activeTab, setActiveTab] = useState<'overview' | 'practice'>('overview');
+  const [showPracticeModal, setShowPracticeModal] = useState(false);
+  const [practiceAnswer, setPracticeAnswer] = useState('');
+  const { width } = Dimensions.get('window');
+  
   // Debug modal state changes
   useEffect(() => {
     console.log('Modal state changed:', showGradingModal);
@@ -68,14 +94,17 @@ export default function LFIStep() {
 
   // Load existing answers and grades
   useEffect(() => {
-    if (user) {
-      loadUserAnswers();
-      // Also sync any local storage data to Supabase
-      syncLocalStorageToSupabase();
-    } else {
-      // No user, load from local storage only
-      loadFromLocalStorage();
-    }
+    const loadData = async () => {
+      if (user) {
+        await loadUserAnswers();
+        // Also sync any local storage data to Supabase
+        await syncLocalStorageToSupabase();
+      } else {
+        // No user, load from local storage only
+        await loadFromLocalStorage();
+      }
+    };
+    loadData();
   }, [user]);
 
   // Network connectivity check
@@ -106,12 +135,12 @@ export default function LFIStep() {
     return () => clearInterval(interval);
   }, [user, syncStatus]);
 
-  const loadFromLocalStorage = () => {
+  const loadFromLocalStorage = async () => {
     try {
-      const savedAnswers = localStorage.getItem('lfi_user_answers');
-      const savedGrades = localStorage.getItem('lfi_user_grades');
-      const savedDrafts = localStorage.getItem('lfi_user_drafts');
-      const savedGraded = localStorage.getItem('lfi_graded_answers');
+      const savedAnswers = await AsyncStorage.getItem('lfi_user_answers');
+      const savedGrades = await AsyncStorage.getItem('lfi_user_grades');
+      const savedDrafts = await AsyncStorage.getItem('lfi_user_drafts');
+      const savedGraded = await AsyncStorage.getItem('lfi_graded_answers');
       
       if (savedAnswers) {
         setUserAnswers(JSON.parse(savedAnswers));
@@ -130,12 +159,12 @@ export default function LFIStep() {
     }
   };
 
-  const saveToLocalStorage = (answers: Record<LFIQuestionKey, string>, grades: Record<LFIQuestionKey, LFIGradingResult>, drafts?: Record<LFIQuestionKey, string>, graded?: Record<LFIQuestionKey, string>) => {
+  const saveToLocalStorage = async (answers: Record<LFIQuestionKey, string>, grades: Record<LFIQuestionKey, LFIGradingResult>, drafts?: Record<LFIQuestionKey, string>, graded?: Record<LFIQuestionKey, string>) => {
     try {
-      localStorage.setItem('lfi_user_answers', JSON.stringify(answers));
-      localStorage.setItem('lfi_user_grades', JSON.stringify(grades));
-      if (drafts) localStorage.setItem('lfi_user_drafts', JSON.stringify(drafts));
-      if (graded) localStorage.setItem('lfi_graded_answers', JSON.stringify(graded));
+      await AsyncStorage.setItem('lfi_user_answers', JSON.stringify(answers));
+      await AsyncStorage.setItem('lfi_user_grades', JSON.stringify(grades));
+      if (drafts) await AsyncStorage.setItem('lfi_user_drafts', JSON.stringify(drafts));
+      if (graded) await AsyncStorage.setItem('lfi_graded_answers', JSON.stringify(graded));
     } catch (error) {
       console.log('Local storage save failed');
     }
@@ -147,8 +176,8 @@ export default function LFIStep() {
     try {
       console.log('Syncing local storage data to Supabase...');
       
-      const savedAnswers = localStorage.getItem('lfi_user_answers');
-      const savedGrades = localStorage.getItem('lfi_user_grades');
+      const savedAnswers = await AsyncStorage.getItem('lfi_user_answers');
+      const savedGrades = await AsyncStorage.getItem('lfi_user_grades');
       
       if (!savedAnswers || !savedGrades) {
         console.log('No local data to sync');
@@ -216,7 +245,7 @@ export default function LFIStep() {
         [questionKey]: answerText
       };
       setUserDrafts(newDrafts);
-      saveToLocalStorage(userAnswers, userGrades, newDrafts, gradedAnswers);
+      await saveToLocalStorage(userAnswers, userGrades, newDrafts, gradedAnswers);
       console.log('Auto-save: Local storage updated');
 
       // Save to database if online
@@ -785,7 +814,7 @@ export default function LFIStep() {
   const loadUserAnswers = async () => {
     if (!user?.id) {
       console.log('No user ID available, loading from local storage only');
-      loadFromLocalStorage();
+      await loadFromLocalStorage();
       return;
     }
 
@@ -801,7 +830,7 @@ export default function LFIStep() {
 
       if (error) {
         console.log('Database error, falling back to local storage:', error.message);
-        loadFromLocalStorage();
+        await loadFromLocalStorage();
         return;
       }
 
@@ -849,48 +878,18 @@ export default function LFIStep() {
         console.log('Processed grades:', grades);
         
         // Also save to local storage as backup
-        saveToLocalStorage({} as Record<LFIQuestionKey, string>, grades, drafts, gradedAnswers);
+        await saveToLocalStorage({} as Record<LFIQuestionKey, string>, grades, drafts, gradedAnswers);
         console.log('Successfully synced data from Supabase to local storage');
       } else {
         console.log('No answers found in database, checking local storage...');
-        loadFromLocalStorage();
+        await loadFromLocalStorage();
       }
     } catch (error) {
       console.log('Database not available, using local storage only:', error);
-      loadFromLocalStorage();
+      await loadFromLocalStorage();
     }
   };
 
-  const handleQuestionSelect = (questionKey: LFIQuestionKey) => {
-    setSelectedQuestion(questionKey);
-    
-    // Check if there's a previous graded answer
-    const existingGrade = userGrades[questionKey];
-    const existingGradedAnswer = gradedAnswers[questionKey];
-    const existingDraft = userDrafts[questionKey];
-    
-    if (existingGrade && existingGradedAnswer) {
-      // There's a previous graded answer
-      setPreviousAnswer(existingGradedAnswer);
-      setPreviousGrade(existingGrade);
-      setUserAnswer(existingDraft || ""); // Load draft if exists, otherwise empty
-      setIsNewAttempt(true);
-    } else if (existingDraft) {
-      // There's a draft but no grade
-      setPreviousAnswer("");
-      setPreviousGrade(null);
-      setUserAnswer(existingDraft); // Load the draft
-      setIsNewAttempt(false);
-    } else {
-      // No previous answer, start fresh
-      setPreviousAnswer("");
-      setPreviousGrade(null);
-      setUserAnswer("");
-      setIsNewAttempt(false);
-    }
-    
-    setGradingResult(null);
-  };
 
   // Auto-save effect when user types
   useEffect(() => {
@@ -936,6 +935,96 @@ export default function LFIStep() {
     setUserAnswer(userDrafts[questionKey] || "");
     setIsNewAttempt(true);
     setGradingResult(null);
+  };
+
+  // Enhanced UX helper functions
+  const toggleCompetencyExpansion = (competencyKey: LFIQuestionKey) => {
+    const newExpanded = new Set(expandedCompetencies);
+    if (newExpanded.has(competencyKey)) {
+      newExpanded.delete(competencyKey);
+    } else {
+      newExpanded.add(competencyKey);
+    }
+    setExpandedCompetencies(newExpanded);
+  };
+
+  const getCompetencyStatus = (competencyKey: LFIQuestionKey) => {
+    const hasAnswer = gradedAnswers[competencyKey];
+    const hasDraft = userDrafts[competencyKey];
+    const hasGrade = userGrades[competencyKey];
+    
+    // If there's a grade, it's completed regardless of other states
+    if (hasGrade) return 'completed';
+    // If there's an answer or draft, it's in progress
+    if (hasDraft || hasAnswer) return 'in_progress';
+    // Otherwise, not started
+    return 'not_started';
+  };
+
+  const handleQuestionSelect = (questionKey: LFIQuestionKey) => {
+    setUserAnswer(gradedAnswers[questionKey] || userDrafts[questionKey] || '');
+    setGradingResult(userGrades[questionKey] || null);
+    setPreviousAnswer(gradedAnswers[questionKey] || '');
+    setPreviousGrade(userGrades[questionKey] || null);
+    setIsNewAttempt(false);
+    setPracticeAnswer(gradedAnswers[questionKey] || userDrafts[questionKey] || '');
+    setSelectedQuestion(questionKey); // Set this temporarily for the modal
+    setShowPracticeModal(true);
+  };
+
+  const handlePracticeModalClose = () => {
+    setShowPracticeModal(false);
+    setSelectedQuestion(null); // Reset to go back to competencies list
+    setPracticeAnswer('');
+  };
+
+  const handlePracticeGrade = async () => {
+    if (!selectedQuestion || !practiceAnswer.trim()) {
+      Alert.alert('Error', 'Please enter an answer before grading.');
+      return;
+    }
+
+    try {
+      setIsGrading(true);
+      const result = gradeAnswerIntelligently(practiceAnswer, selectedQuestion);
+      
+      setUserAnswer(practiceAnswer);
+      setGradingResult(result);
+      setPreviousGrade(result);
+      setIsNewAttempt(true);
+      
+      // Update userGrades state so competency cards show completed status
+      setUserGrades(prev => ({ ...prev, [selectedQuestion]: result }));
+      
+      // Save graded answer
+      const newGradedAnswers = {
+        ...gradedAnswers,
+        [selectedQuestion]: practiceAnswer
+      };
+      const newGrades = {
+        ...userGrades,
+        [selectedQuestion]: result
+      };
+      const newDrafts = {
+        ...userDrafts
+      };
+      delete newDrafts[selectedQuestion]; // Remove draft after grading
+
+      setGradedAnswers(newGradedAnswers);
+      setUserGrades(newGrades);
+      setUserDrafts(newDrafts);
+
+      // Save to local storage
+      await saveToLocalStorage(userAnswers, newGrades, newDrafts, newGradedAnswers);
+      
+      handlePracticeModalClose();
+      setShowGradingModal(true);
+    } catch (error) {
+      console.error('Error grading practice answer:', error);
+      Alert.alert('Error', 'Failed to grade your answer. Please try again.');
+    } finally {
+      setIsGrading(false);
+    }
   };
 
   const handleGradeAnswer = async () => {
@@ -987,7 +1076,7 @@ export default function LFIStep() {
       setUserDrafts(newDrafts);
 
       // Save to local storage
-      saveToLocalStorage(userAnswers, newGrades, newDrafts, newGradedAnswers);
+      await saveToLocalStorage(userAnswers, newGrades, newDrafts, newGradedAnswers);
 
       // Close the answer input modal
       setSelectedQuestion(null);
@@ -1068,15 +1157,15 @@ export default function LFIStep() {
   const getQuestionCardStyle = (label: string) => {
     switch (label) {
       case "Competitive":
-        return styles.questionThemeItemCompetitive;
+        return styles.enhancedCompetencyCard;
       case "Effective":
-        return styles.questionThemeItemEffective;
+        return styles.enhancedCompetencyCard;
       case "Developing":
-        return styles.questionThemeItemDeveloping;
+        return styles.enhancedCompetencyCard;
       case "Needs Work":
-        return styles.questionThemeItemNeedsWork;
+        return styles.enhancedCompetencyCard;
       default:
-        return styles.questionThemeItemUnanswered;
+        return styles.enhancedCompetencyCard;
     }
   };
 
@@ -1200,1533 +1289,1344 @@ I am committed to maintaining these high standards throughout my career and unde
   ];
 
   return (
-    <View style={styles.pageContainer}>
-      <ProfessionalBackground variant="fitness">
-        <View />
-      </ProfessionalBackground>
-      
-      {/* Sync Status Indicator */}
-      {!isOnline && (
-        <View style={styles.offlineIndicator}>
-          <Text style={styles.offlineText}>📱 Working offline - data will sync when online</Text>
-        </View>
-      )}
-      
-      {syncStatus === 'syncing' && (
-        <View style={styles.syncIndicator}>
-          <Text style={styles.syncText}>🔄 Syncing your data...</Text>
-        </View>
-      )}
-      
-      <ScrollView ref={scrollViewRef} style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Introduction Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Target size={24} color={Colors.primary} />
-          <Text style={styles.sectionTitle}>What is the LFI?</Text>
-        </View>
-        <View style={styles.contentCard}>
-          <Text style={styles.introText}>
-            The Local Focus Interview (LFI) is a formal stage in Ontario police hiring. 
-            It is used by most services and may appear as either:
-          </Text>
-          <View style={styles.bulletList}>
-            <View style={styles.bulletItem}>
-              <View style={styles.bulletPoint} />
-              <Text style={styles.bulletText}>
-                A separate stage before the Essential Competency Interview (e.g., Peel, Halton)
-              </Text>
-            </View>
-            <View style={styles.bulletItem}>
-              <View style={styles.bulletPoint} />
-              <Text style={styles.bulletText}>
-                A blended interview where LFI and competency questions are combined (e.g., Toronto, Durham)
-              </Text>
-            </View>
-          </View>
-          <View style={styles.alertBox}>
-            <AlertCircle size={20} color={Colors.primary} />
-            <Text style={styles.alertText}>
-              Passing the LFI is required to move forward.
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Practice CTA */}
-      <TouchableOpacity 
-        style={styles.practiceCTA}
-        onPress={() => {
-          // Scroll to practice section
-          scrollViewRef.current?.scrollTo({ y: 800, animated: true });
-        }}
-        activeOpacity={0.7}
+    <ProfessionalBackground>
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.practiceCTAHeader}>
-          <MessageSquare size={20} color={Colors.primary} />
-          <Text style={styles.practiceCTATitle}>🚀 Ready to Practice?</Text>
+        {/* LFI Hero Card - Moved to Top */}
+        <View style={styles.lfiHeroSection}>
+          <View style={styles.lfiHeroIcon}>
+            <Shield size={32} color={Colors.white} strokeWidth={2} />
+          </View>
+          <Text style={styles.lfiHeroTitle}>Local Focus Interview</Text>
+          <Text style={styles.lfiHeroSubtitle}>
+            Demonstrate your knowledge of the service and community awareness
+          </Text>
         </View>
-        <Text style={styles.practiceCTADescription}>
-          Test your knowledge with interactive practice questions and get instant feedback.
-        </Text>
-        <View style={styles.practiceCTAButton}>
-          <ArrowDown size={16} color="white" />
-          <Text style={styles.practiceCTAButtonText}>Start Practicing</Text>
-        </View>
-      </TouchableOpacity>
 
-      {/* What the LFI Assesses Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <CheckCircle size={24} color={Colors.primary} />
-          <Text style={styles.sectionTitle}>What the LFI Assesses</Text>
-        </View>
-        <View style={styles.contentCard}>
-          <View style={styles.assessmentGrid}>
-            <View style={styles.assessmentItem}>
-              <Text style={styles.assessmentTitle}>Fit for the service and community</Text>
-              <Text style={styles.assessmentDesc}>Values, motivations, alignment</Text>
-            </View>
-            <View style={styles.assessmentItem}>
-              <Text style={styles.assessmentTitle}>Personal background</Text>
-              <Text style={styles.assessmentDesc}>Employment, volunteer work, education, leadership, responsibilities</Text>
-            </View>
-            <View style={styles.assessmentItem}>
-              <Text style={styles.assessmentTitle}>Knowledge of the police service</Text>
-              <Text style={styles.assessmentDesc}>Jurisdiction, divisions, leadership, priorities</Text>
-            </View>
-            <View style={styles.assessmentItem}>
-              <Text style={styles.assessmentTitle}>Community awareness</Text>
-              <Text style={styles.assessmentDesc}>Local issues, crime trends, demographics</Text>
-            </View>
-            <View style={styles.assessmentItem}>
-              <Text style={styles.assessmentTitle}>Motivations</Text>
-              <Text style={styles.assessmentDesc}>"Why policing?" and "Why this service?"</Text>
-            </View>
-            <View style={styles.assessmentItem}>
-              <Text style={styles.assessmentTitle}>Record / accountability</Text>
-              <Text style={styles.assessmentDesc}>Driving history, disciplinary or background matters</Text>
-            </View>
+        {/* Enhanced Tab Navigation */}
+        <View style={styles.enhancedTabContainer}>
+          <View style={styles.tabBackground}>
+            {[
+              { key: 'overview', label: 'Overview', icon: Target },
+              { key: 'practice', label: 'Practice', icon: Edit3 },
+            ].map((tab, index) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={[
+                  styles.enhancedTabButton,
+                  activeTab === tab.key && styles.enhancedTabButtonActive,
+                  index === 0 && styles.firstTab,
+                  index === 1 && styles.lastTab,
+                ]}
+                onPress={() => setActiveTab(tab.key as any)}
+                activeOpacity={0.7}
+              >
+                <View style={[
+                  styles.tabIconContainer,
+                  activeTab === tab.key && styles.tabIconContainerActive
+                ]}>
+                  <tab.icon 
+                    size={20} 
+                    color={activeTab === tab.key ? Colors.white : Colors.gray[500]} 
+                  />
+                </View>
+                <Text style={[
+                  styles.enhancedTabButtonText,
+                  activeTab === tab.key && styles.enhancedTabButtonTextActive
+                ]}>
+                  {tab.label}
+                </Text>
+                {activeTab === tab.key && (
+                  <View style={styles.activeTabIndicator} />
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
-      </View>
 
-      {/* Format Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <FileText size={24} color={Colors.primary} />
-          <Text style={styles.sectionTitle}>Format</Text>
-        </View>
-        <View style={styles.contentCard}>
-          {formatDetails.map((detail, index) => (
-            <View key={index} style={styles.formatItem}>
-              <View style={styles.formatBullet} />
-              <Text style={styles.formatText}>{detail}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* Stage Order Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Clock size={24} color={Colors.primary} />
-          <Text style={styles.sectionTitle}>Stage Order in Process</Text>
-        </View>
-        <View style={styles.contentCard}>
-          {stageOrder.map((order, index) => (
-            <View key={index} style={styles.stageItem}>
-              <View style={styles.stageNumber}>
-                <Text style={styles.stageNumberText}>{index + 1}</Text>
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <View style={styles.tabContent}>
+            {/* Key Focus Areas Grid */}
+            <View style={styles.competenciesGrid}>
+              <Text style={styles.gridTitle}>Assessment Focus Areas</Text>
+              <View style={styles.gridContainer}>
+                <View style={styles.gridItem}>
+                  <View style={styles.gridIcon}>
+                    <Building2 size={20} color={Colors.primary} />
+                  </View>
+                  <Text style={styles.gridLabel}>Service Knowledge</Text>
+                </View>
+                <View style={styles.gridItem}>
+                  <View style={styles.gridIcon}>
+                    <MapPin size={20} color={Colors.primary} />
+                  </View>
+                  <Text style={styles.gridLabel}>Community Awareness</Text>
+                </View>
+                <View style={styles.gridItem}>
+                  <View style={styles.gridIcon}>
+                    <Heart size={20} color={Colors.primary} />
+                  </View>
+                  <Text style={styles.gridLabel}>Motivation</Text>
+                </View>
+                <View style={styles.gridItem}>
+                  <View style={styles.gridIcon}>
+                    <User size={20} color={Colors.primary} />
+                  </View>
+                  <Text style={styles.gridLabel}>Background</Text>
+                </View>
               </View>
-              <Text style={styles.stageText}>{order}</Text>
             </View>
-          ))}
-        </View>
-      </View>
 
-      {/* Interactive Practice Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Edit3 size={24} color={Colors.primary} />
-          <Text style={styles.sectionTitle}>Practice Your Answers</Text>
-        </View>
-        <View style={styles.contentCard}>
-          <Text style={styles.practiceIntro}>
-            Practice answering these common LFI questions. Get instant feedback on your responses to improve your interview performance.
-          </Text>
-          
-          <View style={styles.questionThemesList}>
-            {questionThemes.map((theme, index) => {
-              const IconComponent = theme.icon;
-              const hasGradedAnswer = gradedAnswers[theme.key];
-              const hasDraft = userDrafts[theme.key];
-              const hasGrade = userGrades[theme.key];
-              const hasAnswer = hasGradedAnswer || hasDraft;
-              return (
-                <View key={index} style={[
-                  styles.questionThemeItem, 
-                  hasGradedAnswer && hasGrade ? getQuestionCardStyle(hasGrade.label) : styles.questionThemeItemUnanswered
-                ]}>
-                  <TouchableOpacity
-                    style={styles.questionThemeMain}
-                    onPress={() => handleQuestionSelect(theme.key)}
-                  >
-                    <View style={styles.questionThemeIcon}>
-                      <IconComponent 
-                        size={20} 
-                        color={hasAnswer && hasGrade ? getScoreColor(hasGrade.score) : Colors.primary} 
-                      />
-                    </View>
-                    <View style={styles.questionThemeContent}>
-                      <Text style={styles.questionThemeTitle}>{theme.title}</Text>
-                      <Text style={styles.questionThemeDesc}>{theme.description}</Text>
-                      {hasAnswer && (
-                        <View style={styles.answeredBadge}>
-                          {hasGrade ? (
-                            <View style={styles.completedBadge}>
-                              <View style={[styles.completedIconContainer, { backgroundColor: getScoreColor(hasGrade.score) + "15" }]}>
-                                {getGradeIcon(hasGrade.score)}
+            {/* Process Overview */}
+            <View style={styles.processSection}>
+              <Text style={styles.processTitle}>Interview Structure</Text>
+              <View style={styles.processSteps}>
+                <View style={styles.processStep}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>1</Text>
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepTitle}>Service Knowledge</Text>
+                    <Text style={styles.stepDescription}>Questions about the police service's mission, values, and recent initiatives</Text>
+                  </View>
+                </View>
+                <View style={styles.processStep}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>2</Text>
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepTitle}>Community Understanding</Text>
+                    <Text style={styles.stepDescription}>Discuss local demographics, issues, and community policing approaches</Text>
+                  </View>
+                </View>
+                <View style={styles.processStep}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>3</Text>
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepTitle}>Personal Fit</Text>
+                    <Text style={styles.stepDescription}>Share your motivations, background, and why you're suited for this service</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Quick Preparation Tips */}
+            <View style={styles.quickTipsSection}>
+              <Text style={styles.quickTipsTitle}>Key Preparation Areas</Text>
+              <View style={styles.tipsGrid}>
+                <View style={styles.tipCard}>
+                  <Building2 size={16} color={Colors.primary} />
+                  <Text style={styles.tipCardText}>Research the service</Text>
+                </View>
+                <View style={styles.tipCard}>
+                  <MapPin size={16} color={Colors.primary} />
+                  <Text style={styles.tipCardText}>Know the community</Text>
+                </View>
+                <View style={styles.tipCard}>
+                  <Heart size={16} color={Colors.primary} />
+                  <Text style={styles.tipCardText}>Express motivation</Text>
+                </View>
+                <View style={styles.tipCard}>
+                  <User size={16} color={Colors.primary} />
+                  <Text style={styles.tipCardText}>Share background</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Practice Tab Content */}
+        {activeTab === 'practice' && (
+          <View style={styles.tabContent}>
+            <View style={styles.practiceContent}>
+              <View style={styles.competenciesSection}>
+                <View style={styles.sectionHeader}>
+                  <Target size={20} color={Colors.primary} />
+                  <Text style={styles.sectionTitle}>LFI Question Themes</Text>
+                </View>
+                <Text style={styles.sectionDescription}>
+                  Tap to expand and see sample questions, then practice your responses.
+                </Text>
+                
+                {questionThemes.map((theme) => {
+                  const status = getCompetencyStatus(theme.key);
+                  const isExpanded = expandedCompetencies.has(theme.key);
+                  
+                  return (
+                    <View
+                      key={theme.key}
+                      style={[
+                        styles.enhancedCompetencyCard,
+                        status === 'completed' && styles.competencyCardCompleted
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={styles.competencyMainHeader}
+                        onPress={() => toggleCompetencyExpansion(theme.key)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.competencyHeaderContent}>
+                          <View style={[
+                            styles.competencyIcon,
+                            { backgroundColor: Colors.primary }
+                          ]}>
+                            <theme.icon size={24} color={Colors.white} strokeWidth={2} />
+                          </View>
+                          
+                          <View style={styles.competencyInfo}>
+                            <Text style={styles.competencyTitle}>{theme.title}</Text>
+                            
+                            <View style={styles.competencyStatusRow}>
+                              <View style={[
+                                styles.competencyStatusBadge,
+                                {
+                                  backgroundColor: status === 'completed' ? Colors.success + '20' : Colors.gray[100],
+                                  borderColor: status === 'completed' ? Colors.success : Colors.gray[200]
+                                }
+                              ]}>
+                                <View style={[
+                                  styles.statusIndicator,
+                                  {
+                                    backgroundColor: status === 'completed' ? Colors.success : Colors.gray[400]
+                                  }
+                                ]} />
+                                <Text style={[
+                                  styles.statusText,
+                                  {
+                                    color: status === 'completed' ? Colors.success : Colors.gray[600]
+                                  }
+                                ]}>
+                                  {status === 'completed' ? 'Completed' : status === 'in_progress' ? 'In Progress' : 'Not Started'}
+                                </Text>
                               </View>
-                              <View style={styles.completedTextContainer}>
-                                <Text style={styles.answeredText}>Answered</Text>
-                                <View style={styles.questionScoreContainer}>
-                                  <Text style={[styles.scoreNumber, { color: getScoreColor(hasGrade.score) }]}>
-                                    {hasGrade.score}%
-                                  </Text>
-                                  <Text style={[styles.scoreLabel, { color: getScoreColor(hasGrade.score) }]} numberOfLines={1}>
-                                    {hasGrade.label}
-                                  </Text>
+                            </View>
+                            
+                            <Text style={styles.competencyDescription}>{theme.description}</Text>
+                          </View>
+                          
+                          <TouchableOpacity style={styles.expandIcon}>
+                            {isExpanded ? (
+                              <ChevronUp size={20} color={Colors.gray[500]} />
+                            ) : (
+                              <ChevronDown size={20} color={Colors.gray[500]} />
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                      
+                      {isExpanded && (
+                        <View style={styles.competencyExpandedContent}>
+                          <View style={styles.exampleSection}>
+                            <Text style={styles.exampleLabel}>Sample Question</Text>
+                            <Text style={styles.examplePrompt}>
+                              "Describe a time when you had to work effectively with a diverse team to achieve a common goal. What challenges did you face and how did you overcome them?"
+                            </Text>
+                          </View>
+                          
+                          <View style={styles.competencyActions}>
+                            <View style={styles.verticalActions}>
+                              <TouchableOpacity
+                                style={styles.fullWidthButton}
+                                onPress={() => handleQuestionSelect(theme.key)}
+                                activeOpacity={0.8}
+                              >
+                                <View style={styles.buttonContent}>
+                                  <Play size={16} color={Colors.white} />
+                                  <Text style={styles.buttonText}>Practice Answer</Text>
                                 </View>
+                              </TouchableOpacity>
+                              
+                              <View style={styles.horizontalActions}>
+                                <TouchableOpacity
+                                  style={styles.halfWidthButton}
+                                  onPress={() => {
+                                    // Handle tips
+                                  }}
+                                  activeOpacity={0.8}
+                                >
+                                  <View style={styles.buttonContent}>
+                                    <HelpCircle size={14} color={Colors.white} />
+                                    <Text style={styles.buttonText}>Tips</Text>
+                                  </View>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity
+                                  style={styles.halfWidthButton}
+                                  onPress={() => {
+                                    // Handle review
+                                  }}
+                                  activeOpacity={0.8}
+                                >
+                                  <View style={styles.buttonContent}>
+                                    <BookOpen size={14} color={Colors.white} />
+                                    <Text style={styles.buttonText}>Review</Text>
+                                  </View>
+                                </TouchableOpacity>
                               </View>
                             </View>
-                          ) : (
-                            <View style={styles.draftBadge}>
-                              <View style={styles.draftIconContainer}>
-                                <Clock size={16} color={Colors.warning} />
-                                <View style={styles.draftDot} />
-                              </View>
-                              <View style={styles.draftTextContainer}>
-                                <Text style={styles.draftText}>Draft Saved</Text>
-                                <Text style={styles.draftSubText}>Continue editing</Text>
-                              </View>
-                            </View>
-                          )}
+                          </View>
                         </View>
                       )}
                     </View>
-                    <ArrowRight 
-                      size={20} 
-                      color={hasAnswer && hasGrade ? getScoreColor(hasGrade.score) : Colors.primary} 
-                    />
-                  </TouchableOpacity>
-                  
-                  <View style={styles.questionActions}>
-                    <TouchableOpacity
-                      style={styles.exampleButton}
-                      onPress={() => setShowExample(theme.key)}
-                    >
-                      <FileText size={16} color={Colors.primary} />
-                      <Text style={styles.exampleButtonText}>View Example</Text>
-                    </TouchableOpacity>
-                    {hasGradedAnswer && hasGrade && (
-                      <>
-                        <TouchableOpacity
-                          style={styles.reviewButton}
-                          onPress={() => handleReviewGrade(theme.key)}
-                        >
-                          <Eye size={16} color={Colors.white} />
-                          <Text style={styles.reviewButtonText}>Review Grade</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.newAttemptButton}
-                          onPress={() => handleNewAttempt(theme.key)}
-                        >
-                          <Edit size={16} color={Colors.white} />
-                          <Text style={styles.newAttemptButtonText}>New Attempt</Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
+                  );
+                })}
+              </View>
+            </View>
           </View>
-        </View>
-      </View>
+        )}
 
-      {/* Answer Input Modal */}
-      <Modal visible={selectedQuestion !== null} animationType="slide" presentationStyle="pageSheet">
-        <ProfessionalBackground variant="application">
-          <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {selectedQuestion && questionThemes.find(q => q.key === selectedQuestion)?.title}
-            </Text>
-            <TouchableOpacity onPress={() => setSelectedQuestion(null)} style={styles.modalCloseButton}>
-              <X size={24} color={Colors.white} />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalContent}>
-            {/* Show previous answer if this is a new attempt */}
-            {isNewAttempt && previousAnswer && (
-              <View style={styles.previousAnswerContainer}>
-                <Text style={styles.previousAnswerLabel}>Previous Answer ({previousGrade?.label})</Text>
-                <View style={styles.previousAnswerBox}>
-                  <Text style={styles.previousAnswerText}>{previousAnswer}</Text>
-                </View>
-                {previousGrade && (
-                    <View style={styles.previousGradeBox}>
-                      <Text style={styles.previousGradeText}>
-                        Score: {previousGrade.score}% - {previousGrade.label}
-                      </Text>
-                    </View>
-                )}
-              </View>
-            )}
-            
-            <View style={styles.answerInputContainer}>
-              <View style={styles.answerInputHeader}>
-                <Text style={styles.answerInputLabel}>
-                  {isNewAttempt ? 'New Answer' : 'Your Answer'}
-                </Text>
-                <View style={styles.inputActions}>
-                  {userAnswer.length > 0 && (
-                    <TouchableOpacity 
-                      style={styles.clearButton}
-                      onPress={() => setUserAnswer('')}
-                    >
-                      <X size={16} color="#666" />
-                      <Text style={styles.clearButtonText}>Clear</Text>
-                    </TouchableOpacity>
-                  )}
-                  {userAnswer.length > 0 && (
-                    <TouchableOpacity 
-                      style={styles.testAutoSaveButton}
-                      onPress={() => autoSaveDraft(userAnswer, selectedQuestion!)}
-                    >
-                      <Text style={styles.testAutoSaveButtonText}>Test Auto-Save</Text>
-                    </TouchableOpacity>
-                  )}
-                  {saveStatus === 'saved' && (
-                    <Text style={styles.saveStatusText}>✓ Saved</Text>
-                  )}
-                  {saveStatus === 'saving' && (
-                    <Text style={styles.saveStatusTextSaving}>💾 Saving...</Text>
-                  )}
-                  {saveStatus === 'error' && (
-                    <Text style={styles.saveStatusTextError}>⚠️ Save failed</Text>
-                  )}
-                  {autoSaveStatus === 'saving' && (
-                    <Text style={styles.autoSaveStatusTextSaving}>⚡ Auto-saving...</Text>
-                  )}
-                  {autoSaveStatus === 'saved' && (
-                    <Text style={styles.autoSaveStatusText}>✓ Auto-saved</Text>
-                  )}
-                  {autoSaveStatus === 'error' && (
-                    <Text style={styles.autoSaveStatusTextError}>⚠️ Auto-save failed</Text>
-                  )}
-                </View>
-              </View>
-              <TextInput
-                style={styles.answerInput}
-                value={userAnswer}
-                onChangeText={setUserAnswer}
-                placeholder="Type your answer here... Be specific and use examples from your experience. (Auto-saves every 0.5 seconds)"
-                multiline
-                numberOfLines={8}
-                textAlignVertical="top"
-              />
-              <View style={styles.answerActions}>
-                <TouchableOpacity
-                  onPress={() => setSelectedQuestion(null)}
-                  style={styles.cancelButton}
+        {/* Enhanced iOS-style Modals */}
+        <Modal
+          visible={showPracticeModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <View style={styles.iOSModalContainer}>
+            <View style={styles.iOSModalHeader}>
+              <View style={styles.modalHandle} />
+              
+              <View style={styles.modalHeaderRow}>
+                <TouchableOpacity 
+                  style={styles.modalCloseButton}
+                  onPress={handlePracticeModalClose}
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={saveDraft}
-                  style={[styles.saveButton, (!userAnswer.trim() || isSaving) && styles.saveButtonDisabled]}
-                  disabled={!userAnswer.trim() || isSaving}
-                >
-                  <Text style={styles.saveButtonText}>
-                    {isSaving ? "Saving..." : "Save Draft"}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleGradeAnswer}
-                  style={[styles.gradeButton, (!userAnswer.trim() || isGrading) && styles.gradeButtonDisabled]}
-                  disabled={!userAnswer.trim() || isGrading}
-                >
-                  <Text style={styles.gradeButtonText}>
-                    {isGrading ? "Grading..." : "Grade Answer"}
-                  </Text>
+                  <X size={24} color={Colors.white} />
                 </TouchableOpacity>
                 
-              </View>
-            </View>
-          </ScrollView>
-          </View>
-        </ProfessionalBackground>
-      </Modal>
-
-      {/* Grading Results Modal */}
-      <Modal visible={showGradingModal} animationType="slide" presentationStyle="pageSheet">
-        <ProfessionalBackground variant="application">
-          <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Grading Results</Text>
-            <TouchableOpacity onPress={() => {
-              console.log('Closing modal');
-              setShowGradingModal(false);
-            }} style={styles.modalCloseButton}>
-              <X size={24} color={Colors.white} />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalContent}>
-            {gradingResult && (
-              <View style={styles.gradingResults}>
-                <View style={styles.scoreContainer}>
-                    <View style={styles.scoreCircle}>
-                      <Text style={[styles.scoreText, { color: getScoreColor(gradingResult.score) }]}>
-                        {gradingResult.score}%
-                      </Text>
+                <View style={styles.modalShieldContainer}>
+                  <View style={styles.modalShieldIcon}>
+                    <Shield size={24} color={Colors.white} strokeWidth={2} />
+                    <View style={styles.modalShieldDot}>
+                      <View style={styles.modalRedDot} />
                     </View>
-                  <View style={styles.scoreInfo}>
-                    <Text style={[styles.scoreLabel, { color: getScoreColor(gradingResult.score) }]}>
-                      {gradingResult.label}
-                    </Text>
-                    <Text style={styles.scoreDescription}>
-                      {gradingResult.score >= 85 
-                        ? "Excellent! Your answer demonstrates strong preparation and insight."
-                        : gradingResult.score >= 70
-                        ? "Good work! Your answer shows solid understanding with room for improvement."
-                        : gradingResult.score >= 50
-                        ? "Developing. Focus on the tips below to strengthen your response."
-                        : "Needs work. Review the guidance below to improve your answer."
-                      }
-                    </Text>
                   </View>
                 </View>
-
-                {gradingResult.notes.length > 0 && (
-                  <View style={styles.notesContainer}>
-                    <Text style={styles.notesTitle}>Feedback</Text>
-                    {gradingResult.notes.map((note, index) => (
-                      <View key={index} style={styles.noteItem}>
-                        <CheckCircle size={16} color={Colors.success} />
-                        <Text style={styles.noteText}>{note}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                {gradingResult.tips.length > 0 && (
-                  <View style={styles.tipsContainer}>
-                    <Text style={styles.tipsTitle}>Improvement Tips</Text>
-                    {gradingResult.tips.map((tip, index) => (
-                      <View key={index} style={styles.tipItem}>
-                        <View style={styles.tipBullet} />
-                        <Text style={styles.tipText}>{tip}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-                <View style={styles.detectedSignals}>
-                  <Text style={styles.detectedTitle}>Interview Tips</Text>
-                  {(() => {
-                    const tips = [];
-                    const questionKey = selectedQuestion;
-                    
-                    // Question-specific tips
-                    if (questionKey === 'about_you') {
-                      const aboutYouTips = [
-                        { icon: "💪", text: gradingResult.score >= 85 ? 
-                          "Excellent self-awareness! Your ability to articulate strengths and weaknesses shows maturity." :
-                          "Start with a brief professional summary, then highlight 2-3 key strengths with specific examples." },
-                        { icon: "🎯", text: gradingResult.score < 70 ? 
-                          "Be honest about a real weakness, but show how you're actively working to improve it." :
-                          "Great job balancing strengths and weaknesses! This shows self-reflection." },
-                        { icon: "⭐", text: "Choose strengths that relate to policing: communication, problem-solving, leadership, or teamwork." },
-                        { icon: "🔄", text: "For weaknesses, pick something you're genuinely improving, not a fake strength in disguise." }
-                      ];
-                      tips.push(...aboutYouTips.slice(0, 3));
-                    }
-                    
-                    else if (questionKey === 'employment_volunteer') {
-                      const employmentTips = [
-                        { icon: "📅", text: gradingResult.score >= 85 ? 
-                          "Perfect chronological structure! Your work history tells a clear story of growth." :
-                          "Start with your most recent role and work backwards chronologically." },
-                        { icon: "🎯", text: gradingResult.score < 70 ? 
-                          "Include specific duties, responsibilities, and achievements for each role." :
-                          "Excellent detail! Your specific examples demonstrate relevant experience." },
-                        { icon: "🤝", text: "Connect your work experience to policing skills: customer service, teamwork, leadership, problem-solving." },
-                        { icon: "💼", text: "Don't forget volunteer work - it shows community commitment and relevant skills." }
-                      ];
-                      tips.push(...employmentTips.slice(0, 3));
-                    }
-                    
-                    else if (questionKey === 'knowledge_service') {
-                      const knowledgeTips = [
-                        { icon: "🏢", text: gradingResult.score >= 85 ? 
-                          "Outstanding service knowledge! You clearly understand their mission and priorities." :
-                          "Research the service's mission statement, core values, and recent initiatives." },
-                        { icon: "👮", text: gradingResult.score < 70 ? 
-                          "Mention specific divisions, programs, or community initiatives you're familiar with." :
-                          "Great job showing specific knowledge! This demonstrates genuine interest." },
-                        { icon: "🎯", text: "Connect your background to their values: 'My experience in customer service aligns with your commitment to community service.'" },
-                        { icon: "📰", text: "Stay updated on recent news, community events, or new programs the service has launched." }
-                      ];
-                      tips.push(...knowledgeTips.slice(0, 3));
-                    }
-                    
-                    else if (questionKey === 'community_issues') {
-                      const communityTips = [
-                        { icon: "🌍", text: gradingResult.score >= 85 ? 
-                          "Excellent local awareness! Your knowledge of community issues shows genuine engagement." :
-                          "Research current local issues: crime trends, traffic problems, youth programs, or community events." },
-                        { icon: "🤝", text: gradingResult.score < 70 ? 
-                          "Connect issues to policing solutions: 'Community policing could address this through...'" :
-                          "Great connection between issues and policing approaches!" },
-                        { icon: "📊", text: "Use specific examples: 'Auto theft has increased 15% in the downtown core, which could be addressed through...'" },
-                        { icon: "💡", text: "Show understanding of root causes, not just symptoms of community problems." }
-                      ];
-                      tips.push(...communityTips.slice(0, 3));
-                    }
-                    
-                    else if (questionKey === 'motivation') {
-                      const motivationTips = [
-                        { icon: "❤️", text: gradingResult.score >= 85 ? 
-                          "Powerful motivation! Your personal connection to policing is compelling and authentic." :
-                          "Share a specific, personal reason why you want to be a police officer." },
-                        { icon: "🎯", text: gradingResult.score < 70 ? 
-                          "Connect your motivation to this specific service: 'I want to serve Toronto because...'" :
-                          "Excellent service-specific motivation! This shows genuine interest." },
-                        { icon: "🌟", text: "Avoid clichés like 'I want to help people' - be specific about what draws you to policing." },
-                        { icon: "🔗", text: "Link your personal values to policing values: integrity, service, respect, community." }
-                      ];
-                      tips.push(...motivationTips.slice(0, 3));
-                    }
-                    
-                    else if (questionKey === 'driving_record') {
-                      const drivingTips = [
-                        { icon: "🚗", text: gradingResult.score >= 85 ? 
-                          "Excellent transparency! Your honest approach to your driving history shows integrity." :
-                          "Be completely honest about your driving record - they will check your abstract." },
-                        { icon: "📋", text: gradingResult.score < 70 ? 
-                          "If you have violations, explain what you learned and how you've improved your driving habits." :
-                          "Great job explaining any past issues and showing growth!" },
-                        { icon: "✅", text: "If your record is clean, mention your defensive driving habits and safety practices." },
-                        { icon: "🔄", text: "Show accountability: 'I made a mistake, learned from it, and now I...'" }
-                      ];
-                      tips.push(...drivingTips.slice(0, 3));
-                    }
-                    
-                    // Add one general interview tip
-                    const generalTips = [
-                      { icon: "🎤", text: "Speak confidently and maintain eye contact during your actual interview." },
-                      { icon: "⏰", text: "Practice timing: aim for 2-3 minutes per answer in the real interview." },
-                      { icon: "📝", text: "Use the STAR method: Situation, Task, Action, Result for behavioral examples." },
-                      { icon: "🤝", text: "Show enthusiasm for the role and genuine interest in serving the community." }
-                    ];
-                    tips.push(generalTips[Math.floor(Math.random() * generalTips.length)]);
-                    
-                    return tips.map((tip, index) => (
-                      <View key={index} style={styles.tipItem}>
-                        <Text style={styles.tipBullet}>{tip.icon}</Text>
-                        <Text style={styles.tipText}>{tip.text}</Text>
-                      </View>
-                    ));
-                  })()}
-                </View>
-              </View>
-            )}
-          </ScrollView>
-          </View>
-        </ProfessionalBackground>
-      </Modal>
-
-      {/* Example Answer Modal */}
-      <Modal visible={showExample !== null} animationType="slide" presentationStyle="pageSheet">
-        <ProfessionalBackground variant="application">
-          <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {showExample && questionThemes.find(q => q.key === showExample)?.title}
-            </Text>
-            <TouchableOpacity onPress={() => setShowExample(null)} style={styles.modalCloseButton}>
-              <X size={24} color={Colors.white} />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.exampleContainer}>
-              <View style={styles.exampleHeader}>
-                <FileText size={20} color={Colors.primary} />
-                <Text style={styles.exampleTitle}>Competitive Scoring Example</Text>
-              </View>
-              <Text style={styles.exampleDescription}>
-                This example answer demonstrates all the key elements that would achieve a "Competitive" rating (85+ points) on our grading system:
-              </Text>
-              <View style={styles.exampleFeatures}>
-                <View style={styles.exampleFeature}>
-                  <CheckCircle size={16} color={Colors.success} />
-                  <Text style={styles.exampleFeatureText}>Strong substance signals (specific examples, experience)</Text>
-                </View>
-                <View style={styles.exampleFeature}>
-                  <CheckCircle size={16} color={Colors.success} />
-                  <Text style={styles.exampleFeatureText}>Values alignment (integrity, respect, service, community)</Text>
-                </View>
-                <View style={styles.exampleFeature}>
-                  <CheckCircle size={16} color={Colors.success} />
-                  <Text style={styles.exampleFeatureText}>STAR structure (Situation, Task, Action, Result)</Text>
-                </View>
-                <View style={styles.exampleFeature}>
-                  <CheckCircle size={16} color={Colors.success} />
-                  <Text style={styles.exampleFeatureText}>Personal engagement and accountability</Text>
-                </View>
-                <View style={styles.exampleFeature}>
-                  <CheckCircle size={16} color={Colors.success} />
-                  <Text style={styles.exampleFeatureText}>Appropriate length and professional tone</Text>
-                </View>
-              </View>
-              <View style={styles.exampleAnswer}>
-                <Text style={styles.exampleAnswerText}>
-                  {showExample && exampleAnswers[showExample]}
-                </Text>
+                
+                <View style={styles.modalSpacer} />
               </View>
             </View>
-          </ScrollView>
-          </View>
-        </ProfessionalBackground>
-      </Modal>
 
+            <ScrollView style={styles.iOSModalContent} showsVerticalScrollIndicator={false}>
+              {selectedQuestion && (
+                <View>
+                  <View style={styles.iOSQuestionCard}>
+                    <Text style={styles.iOSQuestionLabel}>SAMPLE QUESTION</Text>
+                    <Text style={styles.iOSQuestionText}>
+                      "Describe a time when you had to work effectively with a diverse team to achieve a common goal. What challenges did you face and how did you overcome them?"
+                    </Text>
+                  </View>
+
+                  <View style={styles.starGuidanceSection}>
+                    <Text style={styles.promptLabel}>Your Answer:</Text>
+                    <TextInput
+                      style={styles.questionPrompt}
+                      value={practiceAnswer}
+                      onChangeText={setPracticeAnswer}
+                      placeholder="Write your answer here..."
+                      placeholderTextColor={Colors.gray[400]}
+                      multiline
+                      textAlignVertical="top"
+                      maxLength={2000}
+                    />
+                    <Text style={styles.characterCount}>
+                      {practiceAnswer.length}/2000 characters
+                    </Text>
+                  </View>
+
+                  <View style={styles.practiceActions}>
+                    <TouchableOpacity
+                      style={[styles.saveDraftButton, { opacity: practiceAnswer.trim() ? 1 : 0.5 }]}
+                      onPress={() => {
+                        // Save draft functionality
+                      }}
+                      disabled={!practiceAnswer.trim() || isSaving}
+                    >
+                      <Bookmark size={16} color={Colors.white} />
+                      <Text style={styles.saveDraftButtonText}>
+                        {isSaving ? 'Saving...' : 'Save Draft'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.gradeButton, { opacity: practiceAnswer.trim() ? 1 : 0.5 }]}
+                      onPress={handlePracticeGrade}
+                      disabled={!practiceAnswer.trim() || isGrading}
+                    >
+                      <Award size={16} color={Colors.white} />
+                      <Text style={styles.gradeButtonText}>
+                        {isGrading ? 'Grading...' : 'Grade Answer'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showGradingModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <View style={styles.iOSModalContainer}>
+            <View style={styles.iOSModalHeader}>
+              <View style={styles.modalHandle} />
+              <View style={styles.iOSModalTitleContainer}>
+                <Award size={24} color={Colors.primary} />
+                <Text style={styles.iOSModalTitle}>Answer Assessment</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.iOSCloseButton}
+                onPress={() => setShowGradingModal(false)}
+              >
+                <X size={20} color={Colors.gray[500]} />
+              </TouchableOpacity>
+            </View>
+            
+            {gradingResult && (
+              <ScrollView style={styles.iOSModalContent} showsVerticalScrollIndicator={false}>
+                <View style={styles.iOSGradeHeader}>
+                  <View style={[styles.iOSGradeIcon, { backgroundColor: `${getScoreColor(gradingResult.score)}15` }]}>
+                    {getGradeIcon(gradingResult.score)}
+                  </View>
+                  <Text style={[styles.iOSGradeTitle, { color: getScoreColor(gradingResult.score) }]}>
+                    {gradingResult.label}
+                  </Text>
+                  <Text style={styles.iOSGradeScore}>Score: {gradingResult.score}/100</Text>
+                </View>
+                
+                {/* User's Answer Section */}
+                <View style={styles.iOSAnswerSection}>
+                  <View style={styles.iOSAnswerHeader}>
+                    <FileText size={20} color={Colors.primary} />
+                    <Text style={styles.iOSAnswerTitle}>Your Answer</Text>
+                  </View>
+                  <View style={styles.iOSAnswerContent}>
+                    <Text style={styles.iOSAnswerText}>
+                      {userAnswer}
+                    </Text>
+                  </View>
+                </View>
+                
+                <View style={styles.iOSFeedbackSection}>
+                  <View style={styles.iOSFeedbackHeader}>
+                    <CheckCircle size={20} color={Colors.success} />
+                    <Text style={styles.iOSFeedbackTitle}>Strengths</Text>
+                  </View>
+                  {gradingResult.notes.filter(note => note.includes('Good') || note.includes('Strong')).map((strength, index) => (
+                    <View key={index} style={styles.iOSFeedbackItem}>
+                      <View style={[styles.iOSFeedbackBullet, { backgroundColor: Colors.success }]} />
+                      <Text style={styles.iOSFeedbackText}>{strength}</Text>
+                    </View>
+                  ))}
+                </View>
+                
+                <View style={styles.iOSFeedbackSection}>
+                  <View style={styles.iOSFeedbackHeader}>
+                    <AlertCircle size={20} color={Colors.warning} />
+                    <Text style={styles.iOSFeedbackTitle}>Areas for Improvement</Text>
+                  </View>
+                  {gradingResult.notes.filter(note => note.includes('Consider') || note.includes('Try')).map((area, index) => (
+                    <View key={index} style={styles.iOSFeedbackItem}>
+                      <View style={[styles.iOSFeedbackBullet, { backgroundColor: Colors.warning }]} />
+                      <Text style={styles.iOSFeedbackText}>{area}</Text>
+                    </View>
+                  ))}
+                </View>
+                
+                <View style={styles.iOSFeedbackSection}>
+                  <View style={styles.iOSFeedbackHeader}>
+                    <Lightbulb size={20} color={Colors.primary} />
+                    <Text style={styles.iOSFeedbackTitle}>Specific Tips</Text>
+                  </View>
+                  {gradingResult.tips.map((tip, index) => (
+                    <View key={index} style={styles.iOSFeedbackItem}>
+                      <View style={[styles.iOSFeedbackBullet, { backgroundColor: Colors.primary }]} />
+                      <Text style={styles.iOSFeedbackText}>{tip}</Text>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </Modal>
       </ScrollView>
-    </View>
+    </ProfessionalBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  pageContainer: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
-    zIndex: 1,
   },
-  section: {
-    marginBottom: 28,
+  contentContainer: {
+    padding: 20,
+    paddingBottom: 40,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    marginHorizontal: 20,
+  header: {
+    marginBottom: 30,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 17,
+    color: '#1a1a1a',
+    lineHeight: 26,
+    fontWeight: '400',
+    letterSpacing: 0.2,
+  },
+  enhancedTabContainer: {
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  tabBackground: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
-    shadowColor: Colors.primary,
+    padding: 6,
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.text,
-    marginLeft: 12,
-    letterSpacing: 0.5,
+  enhancedTabButton: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    position: 'relative',
   },
-  contentCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    marginHorizontal: 20,
-    padding: 24,
-    borderRadius: 20,
+  enhancedTabButtonActive: {
+    backgroundColor: Colors.primary,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-  },
-  // Practice CTA Styles
-  practiceCTA: {
-    backgroundColor: Colors.primary,
-    marginHorizontal: 20,
-    marginVertical: 16,
-    padding: 20,
-    borderRadius: 20,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 8,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    transform: [{ scale: 1 }],
   },
-  practiceCTAHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 6,
+  firstTab: {
+    marginRight: 3,
   },
-  practiceCTATitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "white",
+  lastTab: {
+    marginLeft: 3,
   },
-  practiceCTADescription: {
-    fontSize: 13,
-    color: "rgba(255, 255, 255, 0.9)",
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  practiceCTAButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.4)",
-    alignSelf: "flex-start",
-  },
-  practiceCTAButtonText: {
-    color: "white",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  introText: {
-    fontSize: 17,
-    lineHeight: 26,
-    color: Colors.text,
-    marginBottom: 20,
-    fontWeight: "400",
-  },
-  bulletList: {
-    marginBottom: 16,
-  },
-  bulletItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+  tabIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  bulletPoint: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.primary,
-    marginTop: 8,
-    marginRight: 12,
-  },
-  bulletText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.text,
-    flex: 1,
-  },
-  alertBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.policeBlueLight,
-    padding: 12,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.primary,
-  },
-  alertText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: Colors.text,
-    marginLeft: 8,
-    flex: 1,
-  },
-  assessmentGrid: {
-    gap: 16,
-  },
-  assessmentItem: {
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  assessmentTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  assessmentDesc: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  formatItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  formatBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.primary,
-    marginTop: 8,
-    marginRight: 12,
-  },
-  formatText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.text,
-    flex: 1,
-  },
-  stageItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  stageNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  stageNumberText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: Colors.white,
-  },
-  stageText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.text,
-    flex: 1,
-  },
-  themesIntro: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 16,
-    fontStyle: "italic",
-  },
-  questionThemesList: {
-    gap: 16,
-  },
-  questionThemeItem: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(30, 64, 175, 0.15)',
-    overflow: "hidden",
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 8,
-    marginBottom: 16,
-  },
-  questionThemeIcon: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  questionThemeContent: {
-    flex: 1,
-    marginRight: 12,
-  },
-  questionThemeTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  questionThemeDesc: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-  },
-  warningBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.warning + "15",
-    padding: 12,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.warning,
-  },
-  warningText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: Colors.warning,
-    marginLeft: 8,
-    flex: 1,
-  },
-  // Interactive Practice Styles
-  practiceIntro: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  questionThemeItemAnswered: {
-    backgroundColor: Colors.success + "10",
-    borderLeftColor: Colors.success,
-  },
-  questionThemeItemUnanswered: {
-    backgroundColor: Colors.surface,
-    borderColor: Colors.primary + "60",
-    borderWidth: 3,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  questionThemeItemCompetitive: {
-    backgroundColor: Colors.success + "08",
-    borderColor: Colors.success + "40",
-    borderWidth: 2,
-    shadowColor: Colors.success,
-    shadowOpacity: 0.15,
-  },
-  questionThemeItemEffective: {
-    backgroundColor: Colors.primary + "08",
-    borderColor: Colors.primary + "40",
-    borderWidth: 2,
-    shadowColor: Colors.primary,
-    shadowOpacity: 0.15,
-  },
-  questionThemeItemDeveloping: {
-    backgroundColor: Colors.warning + "08",
-    borderColor: Colors.warning + "40",
-    borderWidth: 2,
-    shadowColor: Colors.warning,
-    shadowOpacity: 0.15,
-  },
-  questionThemeItemNeedsWork: {
-    backgroundColor: Colors.error + "08",
-    borderColor: Colors.error + "40",
-    borderWidth: 2,
-    shadowColor: Colors.error,
-    shadowOpacity: 0.15,
-  },
-  questionThemeMain: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: 20,
-    flex: 1,
-  },
-  questionActions: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.05)',
-    flexDirection: "column",
-    gap: 12,
-    backgroundColor: 'rgba(248, 250, 252, 0.5)',
-  },
-  exampleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: Colors.primary + "20",
-    borderRadius: 12,
-    width: "100%",
-    borderWidth: 1,
-    borderColor: Colors.primary + "30",
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  exampleButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: Colors.primary,
-  },
-  reviewButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    padding: 12,
-    backgroundColor: Colors.success,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: Colors.success,
-    width: "100%",
-    shadowColor: Colors.success,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  reviewButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.white,
-  },
-  newAttemptButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    width: "100%",
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  newAttemptButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.white,
-  },
-  previousAnswerContainer: {
-    marginBottom: 20,
-    padding: 16,
-    backgroundColor: 'rgba(248, 250, 252, 0.8)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  previousAnswerLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-    marginBottom: 12,
-  },
-  previousAnswerBox: {
-    padding: 12,
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 8,
-  },
-  previousAnswerText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
-  },
-  previousGradeBox: {
-    padding: 8,
-    backgroundColor: Colors.primary + "10",
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  previousGradeText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: Colors.primary,
-  },
-  scoreDisplayText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  answeredBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-    gap: 4,
-  },
-  answeredText: {
-    fontSize: 13,
-    color: Colors.text,
-    fontWeight: "600",
-  },
-  draftText: {
-    fontSize: 13,
-    color: Colors.warning,
-    fontWeight: "600",
-  },
-  draftBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.warning + "20",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 25,
-    borderWidth: 2,
-    borderColor: Colors.warning + "40",
-    gap: 10,
-    shadowColor: Colors.warning,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  draftIconContainer: {
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 24,
-    height: 24,
-  },
-  draftDot: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.warning,
-    borderWidth: 2,
-    borderColor: Colors.background,
-  },
-  draftTextContainer: {
-    flex: 1,
-  },
-  draftSubText: {
-    fontSize: 10,
-    color: Colors.textSecondary,
-    fontWeight: "400",
-    marginTop: 1,
-  },
-  completedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 25,
-    borderWidth: 2,
-    borderColor: "#e2e8f0",
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  completedIconContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: 28,
-    height: 28,
-    backgroundColor: Colors.success + "15",
-    borderRadius: 14,
-  },
-  completedTextContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  questionScoreContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flex: 1,
-    marginTop: 2,
-    minWidth: 0,
-  },
-  scoreNumber: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-    lineHeight: 22,
-    flexShrink: 0,
-  },
-  scoreLabelBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  questionScoreLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-    flexShrink: 1,
-    maxWidth: "60%",
-    overflow: "hidden",
-  },
-  // Modal Styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: Colors.primary,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.policeRedBorder,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.white,
-    flex: 1,
-  },
-  modalCloseButton: {
-    padding: 8,
-    borderRadius: 6,
+  tabIconContainerActive: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  modalContent: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: 'transparent',
-  },
-  // Answer Input Styles
-  answerInputContainer: {
-    gap: 12,
-  },
-  answerInputHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  answerInputLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: Colors.text,
-  },
-  clearButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 6,
-  },
-  clearButtonText: {
-    fontSize: 12,
-    color: "#666",
-    fontWeight: "500",
-  },
-  // Example Modal Styles
-  exampleContainer: {
-    gap: 16,
-    padding: 16,
-    backgroundColor: 'rgba(248, 250, 252, 0.3)',
-    borderRadius: 12,
-    margin: 8,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  exampleHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 8,
-  },
-  exampleTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-  },
-  exampleDescription: {
+  enhancedTabButtonText: {
     fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: 12,
-    fontWeight: "400",
+    fontWeight: '600',
+    color: '#6b7280',
+    textAlign: 'center',
+    letterSpacing: -0.1,
   },
-  exampleFeatures: {
-    gap: 8,
-    marginBottom: 12,
-    padding: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 8,
+  enhancedTabButtonTextActive: {
+    color: Colors.white,
+    fontWeight: '700',
+    letterSpacing: -0.1,
   },
-  exampleFeature: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    paddingVertical: 4,
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: -2,
+    left: '50%',
+    marginLeft: -8,
+    width: 16,
+    height: 3,
+    backgroundColor: Colors.white,
+    borderRadius: 2,
   },
-  exampleFeatureText: {
-    fontSize: 13,
-    color: Colors.text,
+  tabContent: {
     flex: 1,
-    lineHeight: 18,
-    fontWeight: "400",
   },
-  exampleAnswer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 16,
-    borderRadius: 12,
+  quickIntroCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
     borderLeftWidth: 4,
     borderLeftColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
   },
-  exampleAnswerText: {
-    fontSize: 14,
-    color: Colors.text,
+  quickIntroHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  quickIntroTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginLeft: 12,
+    letterSpacing: -0.2,
+  },
+  quickIntroText: {
+    fontSize: 15,
+    color: '#1a1a1a',
+    lineHeight: 24,
+    marginBottom: 20,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+  keyPoints: {
+    gap: 12,
+    marginTop: 20,
+  },
+  keyPoint: {
+    fontSize: 15,
+    color: '#1a1a1a',
     lineHeight: 22,
-    fontWeight: "400",
+    fontWeight: '400',
+    letterSpacing: 0.1,
   },
-  answerInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: Colors.text,
-    backgroundColor: Colors.background,
-    minHeight: 200,
-  },
-  answerActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  inputActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  cancelButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: Colors.textSecondary,
-  },
-  saveButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: Colors.warning,
-    alignItems: "center",
-  },
-  saveButtonDisabled: {
-    backgroundColor: "#ccc",
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: Colors.white,
-  },
-  saveStatusText: {
-    fontSize: 12,
-    color: Colors.success,
-    fontWeight: "500",
-  },
-  saveStatusTextSaving: {
-    fontSize: 12,
-    color: Colors.warning,
-    fontWeight: "500",
-  },
-  saveStatusTextError: {
-    fontSize: 12,
-    color: Colors.error,
-    fontWeight: "500",
-  },
-  autoSaveStatusTextSaving: {
-    fontSize: 11,
-    color: Colors.warning,
-    fontWeight: "500",
-  },
-  autoSaveStatusText: {
-    fontSize: 11,
-    color: Colors.success,
-    fontWeight: "500",
-  },
-  autoSaveStatusTextError: {
-    fontSize: 11,
-    color: Colors.error,
-    fontWeight: "500",
-  },
-  testAutoSaveButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: Colors.primary + "20",
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: Colors.primary + "40",
-  },
-  testAutoSaveButtonText: {
-    fontSize: 10,
-    color: Colors.primary,
-    fontWeight: "500",
-  },
-  gradeButton: {
-    flex: 2,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-  },
-  gradeButtonDisabled: {
-    backgroundColor: Colors.border,
-  },
-  gradeButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.white,
-  },
-  // Grading Results Styles
-  gradingResults: {
-    gap: 24,
-  },
-  scoreContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    padding: 20,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-  },
-  scoreCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: Colors.border,
-  },
-  scoreText: {
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  scoreInfo: {
+  tipsSection: {
     flex: 1,
   },
-  scoreLabel: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  scoreDescription: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  notesContainer: {
-    gap: 12,
-  },
-  notesTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-  },
-  noteItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    padding: 12,
-    backgroundColor: Colors.success + "10",
-    borderRadius: 8,
-  },
-  noteText: {
-    fontSize: 14,
-    color: Colors.text,
-    flex: 1,
-  },
-  tipsContainer: {
-    gap: 12,
+  tipsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   tipsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginLeft: 12,
+    letterSpacing: -0.3,
+  },
+  tipCategoryCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+  },
+  tipCategoryTitle: {
+    fontSize: 19,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 18,
+    letterSpacing: -0.2,
   },
   tipItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   tipBullet: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: Colors.primary,
-    marginTop: 8,
+    marginTop: 6,
+    marginRight: 12,
   },
   tipText: {
-    fontSize: 14,
-    color: Colors.text,
+    fontSize: 15,
+    color: '#1a1a1a',
+    lineHeight: 22,
     flex: 1,
-    lineHeight: 20,
+    fontWeight: '400',
+    letterSpacing: 0.1,
   },
-  offlineIndicator: {
-    backgroundColor: Colors.warning,
-    padding: 12,
-    marginHorizontal: 16,
-    marginTop: 8,
-    borderRadius: 8,
+  practiceContent: {
+    gap: 20,
+  },
+  competenciesSection: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 15,
   },
-  offlineText: {
-    color: Colors.white,
-    fontSize: 14,
-    fontWeight: '500',
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginLeft: 12,
+    flex: 1,
+    letterSpacing: -0.3,
   },
-  syncIndicator: {
-    backgroundColor: Colors.primary,
-    padding: 12,
-    marginHorizontal: 16,
-    marginTop: 8,
-    borderRadius: 8,
+  sectionDescription: {
+    fontSize: 15,
+    color: '#1a1a1a',
+    marginBottom: 24,
+    lineHeight: 22,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+  enhancedCompetencyCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    marginBottom: 20,
+    overflow: 'hidden',
+    borderWidth: 0,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  competencyCardCompleted: {
+    borderWidth: 2,
+    borderColor: Colors.success,
+    shadowColor: Colors.success,
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  competencyMainHeader: {
+    padding: 20,
+  },
+  competencyHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  competencyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 16,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  syncText: {
-    color: Colors.white,
-    fontSize: 14,
-    fontWeight: '500',
+  competencyInfo: {
+    flex: 1,
   },
-  detectedSignals: {
+  competencyTitle: {
+    fontSize: 19,
+    fontWeight: '700',
+    color: '#1f2937',
+    letterSpacing: -0.2,
+    lineHeight: 24,
+    marginBottom: 6,
+  },
+  competencyStatusRow: {
+    marginBottom: 8,
+  },
+  competencyStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statusIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  competencyDescription: {
+    fontSize: 15,
+    color: '#6b7280',
+    lineHeight: 22,
+    marginBottom: 10,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+  gradeBadge: {
+    alignSelf: 'flex-start',
+  },
+  gradeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  expandIcon: {
+    marginLeft: 12,
+    padding: 4,
+  },
+  competencyExpandedContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    paddingTop: 16,
+    backgroundColor: Colors.gray[50],
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray[100],
+  },
+  exampleSection: {
+    marginBottom: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
     padding: 16,
-    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.gray[100],
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  exampleLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.1,
+    color: Colors.primary,
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
+  examplePrompt: {
+    fontSize: 15,
+    fontWeight: '500',
+    lineHeight: 24,
+    letterSpacing: 0.1,
+    color: '#1a1a1a',
+    fontStyle: 'italic',
+  },
+  competencyActions: {
+    marginTop: 8,
+  },
+  verticalActions: {
+    gap: 12,
+  },
+  horizontalActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  fullWidthButton: {
+    backgroundColor: Colors.success,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    shadowColor: Colors.success,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  halfWidthButton: {
+    backgroundColor: Colors.gray[600],
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    shadowColor: Colors.gray[600],
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+    flex: 1,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  buttonText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  // iOS Modal Styles
+  iOSModalContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  iOSModalHeader: {
+    backgroundColor: Colors.primary,
+    paddingTop: 20,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 44,
+  },
+  modalCloseButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalShieldContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalShieldIcon: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  modalShieldDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalRedDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF4444',
+  },
+  modalSpacer: {
+    width: 44,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    backgroundColor: Colors.gray[300],
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  iOSModalTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  iOSModalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.white,
+    marginLeft: 12,
+    letterSpacing: -0.3,
+  },
+  iOSCloseButton: {
+    position: 'absolute',
+    right: 20,
+    top: -12,
+    padding: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    zIndex: 10,
+  },
+  iOSModalContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  iOSQuestionCard: {
+    backgroundColor: Colors.primary,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 0,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  iOSQuestionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.white,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  iOSQuestionText: {
+    fontSize: 16,
+    color: Colors.white,
+    lineHeight: 24,
+    fontWeight: '500',
+    fontStyle: 'italic',
+  },
+  starGuidanceSection: {
+    marginBottom: 20,
+  },
+  promptLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 10,
+    letterSpacing: -0.1,
+  },
+  questionPrompt: {
+    fontSize: 16,
+    fontStyle: 'italic',
+    color: Colors.primary,
+    lineHeight: 24,
+    backgroundColor: `${Colors.primary}10`,
+    padding: 18,
+    borderRadius: 12,
+    fontWeight: '500',
+    letterSpacing: 0.1,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    textAlignVertical: 'top',
+    minHeight: 120,
+  },
+  characterCount: {
+    fontSize: 12,
+    color: Colors.gray[500],
+    textAlign: 'right',
+    marginTop: 8,
+  },
+  practiceActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  saveDraftButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.gray[600],
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderRadius: 12,
     gap: 8,
   },
-  detectedTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+  saveDraftButtonText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  gradeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  gradeButtonText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  iOSGradeHeader: {
+    alignItems: 'center',
+    marginBottom: 32,
+    paddingBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  iOSGradeIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iOSGradeTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    marginBottom: 10,
+    letterSpacing: -0.5,
+  },
+  iOSGradeScore: {
+    fontSize: 17,
+    color: '#6b7280',
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  iOSAnswerSection: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  iOSAnswerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iOSAnswerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
     color: Colors.text,
+    marginLeft: 12,
+  },
+  iOSAnswerContent: {
+    backgroundColor: Colors.gray[50],
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  iOSAnswerText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: Colors.text,
+    letterSpacing: 0.1,
+  },
+  iOSFeedbackSection: {
+    marginBottom: 24,
+  },
+  iOSFeedbackHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  iOSFeedbackTitle: {
+    fontSize: 19,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginLeft: 12,
+    letterSpacing: -0.2,
+  },
+  iOSFeedbackItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  iOSFeedbackBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 6,
+    marginRight: 12,
+  },
+  iOSFeedbackText: {
+    fontSize: 15,
+    color: '#6b7280',
+    lineHeight: 22,
+    flex: 1,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+  // LFI Overview Styles
+  lfiHeroSection: {
+    backgroundColor: Colors.primary,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24,
+    alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  lfiHeroIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  lfiHeroTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.white,
+    marginBottom: 8,
+    letterSpacing: -0.5,
+    textAlign: 'center',
+  },
+  lfiHeroSubtitle: {
+    fontSize: 16,
+    color: Colors.white,
+    textAlign: 'center',
+    lineHeight: 24,
+    fontWeight: '400',
+    opacity: 0.9,
+    letterSpacing: 0.1,
+  },
+  competenciesGrid: {
+    marginBottom: 24,
+  },
+  gridTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 16,
+    letterSpacing: -0.2,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  gridItem: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  gridIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 8,
   },
+  gridLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    textAlign: 'center',
+    letterSpacing: -0.1,
+  },
+  processSection: {
+    marginBottom: 24,
+  },
+  processTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 16,
+    letterSpacing: -0.2,
+  },
+  processSteps: {
+    gap: 16,
+  },
+  processStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  stepNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  stepNumberText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 4,
+    letterSpacing: -0.1,
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    lineHeight: 20,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+  },
+  quickTipsSection: {
+    marginBottom: 24,
+  },
+  quickTipsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 16,
+    letterSpacing: -0.2,
+  },
+  tipsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  tipCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  tipCardText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginLeft: 8,
+    letterSpacing: -0.1,
+  },
 });
+
