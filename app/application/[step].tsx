@@ -23,13 +23,13 @@ import Button from "@/components/Button";
 import ProfileResumeBuilder from "@/components/ProfileResumeBuilder";
 import MandatoryRequirementsChecklist from "@/components/MandatoryRequirementsChecklist";
 import OACPPracticeHub from "@/components/OACPPracticeHub";
+import PoliceThemeBackground from "@/components/PoliceThemeBackground";
 import PoliceServiceSelector from "@/components/PoliceServiceSelector";
 import PoliceServiceApplication from "@/components/PoliceServiceApplication";
 import PoliceServiceSelectionModal from "@/components/PoliceServiceSelectionModal";
 import PREPFitnessTestStep from "@/components/PREPFitnessTestStep";
 import LFIStep from "@/components/LFIStep";
 import ECIStep from "@/components/ECIStep";
-import PoliceThemeBackground from "@/components/PoliceThemeBackground";
 import ProfessionalBackground from "@/components/ProfessionalBackground";
 import applicationSteps from "@/constants/applicationSteps";
 import { useApplication } from "@/context/ApplicationContext";
@@ -175,11 +175,12 @@ export default function ApplicationStepDetailScreen() {
         <View />
       </ProfessionalBackground>
       
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <PoliceThemeBackground>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
       {/* Show header for all steps except application, pre-application-prep, oacp, prerequisites, prep-fitness-test, lfi-interview, and eci-panel-interview */}
       {resolvedStepId !== 'application' && resolvedStepId !== 'pre-application-prep' && resolvedStepId !== 'oacp' && resolvedStepId !== 'prerequisites' && resolvedStepId !== 'prep-fitness-test' && resolvedStepId !== 'lfi-interview' && resolvedStepId !== 'eci-panel-interview' && (
         <>
@@ -210,84 +211,7 @@ export default function ApplicationStepDetailScreen() {
       )}
 
       {resolvedStepId === 'oacp' && (
-        <>
-          <OACPPracticeHub />
-
-          {/* OACP Requirements Section */}
-          <View style={styles.oacpRequirementsContainer}>
-            <Text style={styles.oacpSectionTitle}>Certificate Requirements</Text>
-            <View style={styles.oacpRequirementsList}>
-              <View style={styles.oacpRequirementItem}>
-                <View style={styles.oacpRequirementIcon}>
-                  <CheckCircle size={20} color={Colors.success} />
-                </View>
-                <View style={styles.oacpRequirementContent}>
-                  <Text style={styles.oacpRequirementTitle}>Written Test</Text>
-                  <Text style={styles.oacpRequirementDesc}>50 multiple-choice questions covering various topics</Text>
-                </View>
-              </View>
-              <View style={styles.oacpRequirementItem}>
-                <View style={styles.oacpRequirementIcon}>
-                  <CheckCircle size={20} color={Colors.success} />
-                </View>
-                <View style={styles.oacpRequirementContent}>
-                  <Text style={styles.oacpRequirementTitle}>Physical Test</Text>
-                  <Text style={styles.oacpRequirementDesc}>Physical fitness assessment and evaluation</Text>
-                </View>
-              </View>
-              <View style={styles.oacpRequirementItem}>
-                <View style={styles.oacpRequirementIcon}>
-                  <CheckCircle size={20} color={Colors.success} />
-                </View>
-                <View style={styles.oacpRequirementContent}>
-                  <Text style={styles.oacpRequirementTitle}>Documentation</Text>
-                  <Text style={styles.oacpRequirementDesc}>Submit required forms and identification</Text>
-                </View>
-              </View>
-              <View style={styles.oacpRequirementItem}>
-                <View style={styles.oacpRequirementIcon}>
-                  <CheckCircle size={20} color={Colors.success} />
-                </View>
-                <View style={styles.oacpRequirementContent}>
-                  <Text style={styles.oacpRequirementTitle}>Application Fee</Text>
-                  <Text style={styles.oacpRequirementDesc}>Pay the required application processing fee</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* OACP Tips Section */}
-          <View style={styles.oacpTipsContainer}>
-            <Text style={styles.oacpSectionTitle}>Success Tips</Text>
-            <View style={styles.oacpTipsList}>
-              <View style={styles.oacpTipItem}>
-                <View style={styles.oacpTipNumber}>
-                  <Text style={styles.oacpTipNumberText}>1</Text>
-                </View>
-                <Text style={styles.oacpTipText}>Apply for the OACP Certificate well in advance - processing can take several months</Text>
-              </View>
-              <View style={styles.oacpTipItem}>
-                <View style={styles.oacpTipNumber}>
-                  <Text style={styles.oacpTipNumberText}>2</Text>
-                </View>
-                <Text style={styles.oacpTipText}>Practice regularly with our sample tests to familiarize yourself with the question format</Text>
-              </View>
-              <View style={styles.oacpTipItem}>
-                <View style={styles.oacpTipNumber}>
-                  <Text style={styles.oacpTipNumberText}>3</Text>
-                </View>
-                <Text style={styles.oacpTipText}>Focus on time management - you have 60 minutes for 50 questions</Text>
-              </View>
-              <View style={styles.oacpTipItem}>
-                <View style={styles.oacpTipNumber}>
-                  <Text style={styles.oacpTipNumberText}>4</Text>
-                </View>
-                <Text style={styles.oacpTipText}>Keep all documentation organized and ready for submission</Text>
-              </View>
-            </View>
-          </View>
-
-        </>
+        <OACPPracticeHub />
       )}
 
       {resolvedStepId === 'prep-fitness-test' && (
@@ -388,7 +312,8 @@ export default function ApplicationStepDetailScreen() {
           router.push('/(tabs)/application');
         }}
       />
-      </ScrollView>
+        </ScrollView>
+      </PoliceThemeBackground>
     </View>
   );
 }
@@ -642,86 +567,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
 
-  oacpRequirementsContainer: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  oacpSectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 16,
-  },
-  oacpRequirementsList: {
-    gap: 16,
-  },
-  oacpRequirementItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  oacpRequirementIcon: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  oacpRequirementContent: {
-    flex: 1,
-  },
-  oacpRequirementTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  oacpRequirementDesc: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  oacpTipsContainer: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  oacpTipsList: {
-    gap: 16,
-  },
-  oacpTipItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  oacpTipNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  oacpTipNumberText: {
-    color: Colors.white,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  oacpTipText: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
   oacpResourcesContainer: {
     backgroundColor: Colors.white,
     borderRadius: 16,

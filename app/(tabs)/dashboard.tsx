@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
@@ -424,8 +425,13 @@ export default function DashboardScreen() {
         {/* Enhanced Welcome Header */}
         <View style={styles.welcomeSection}>
           <View style={styles.welcomeBackground}>
-            {/* Gradient Overlay */}
-            <View style={styles.welcomeGradient} />
+            {/* Inverted Gradient Background */}
+            <LinearGradient
+              colors={['#1E40AF', '#3B82F6']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.welcomeGradient}
+            />
             
             <View style={styles.welcomeContent}>
               <View style={styles.welcomeTextContainer}>
@@ -686,7 +692,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.primary,
+    backgroundColor: 'transparent',
     borderRadius: 24,
     padding: 24,
     shadowColor: Colors.shadows.colored,
@@ -702,8 +708,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: Colors.primary,
-    opacity: 0.95,
   },
   welcomeContent: {
     flex: 1,

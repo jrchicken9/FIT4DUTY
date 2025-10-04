@@ -84,16 +84,44 @@ export const ApplicationProvider = ({ children }: { children: React.ReactNode })
       const status = completed ? 'completed' : 'not_started';
       const completedAt = completed ? new Date().toISOString() : null;
 
-      const { error } = await supabase
+      // First, try to find existing record
+      const { data: existingRecord, error: selectError } = await supabase
         .from('application_progress')
-        .upsert({
-          user_id: user.id,
-          step_id: stepId,
-          status,
-          notes: notes || null,
-          completed_at: completedAt,
-          updated_at: new Date().toISOString(),
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('step_id', stepId)
+        .single();
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        // PGRST116 is "not found" which is expected for new records
+        console.error('Error checking existing progress:', selectError);
+        throw selectError;
+      }
+
+      const progressData = {
+        user_id: user.id,
+        step_id: stepId,
+        status,
+        notes: notes || null,
+        completed_at: completedAt,
+        updated_at: new Date().toISOString(),
+      };
+
+      let error;
+      if (existingRecord) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('application_progress')
+          .update(progressData)
+          .eq('id', existingRecord.id);
+        error = updateError;
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('application_progress')
+          .insert(progressData);
+        error = insertError;
+      }
 
       if (error) {
         console.error('Error saving application progress:', error);
@@ -241,6 +269,7 @@ export const ApplicationProvider = ({ children }: { children: React.ReactNode })
     } catch (error) {
       console.error('Error updating step notes:', error);
       // Revert local state on error
+      const stepProgress = getStepProgress(stepId);
       setApplicationState(prev => ({
         ...prev,
         steps: prev.steps.map(step => 

@@ -103,7 +103,7 @@ export default function SignInScreen() {
             <Logo size="large" variant="primary" style={styles.logo} />
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>
-              Continue your police fitness and test preparation journey
+              Your complete police application and fitness preparation platform
             </Text>
           </View>
 

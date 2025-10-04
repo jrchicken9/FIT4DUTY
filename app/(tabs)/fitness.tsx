@@ -49,6 +49,7 @@ import {
   User,
   Settings,
   Bell,
+  ClipboardList,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
@@ -73,6 +74,10 @@ import PersonalizedFitnessDashboard from '@/components/PersonalizedFitnessDashbo
 import PersonalizedPrepPlanModal from '@/components/PersonalizedPrepPlanModal';
 import { WorkoutPlan as DBWorkoutPlan } from '@/types/workout';
 import { WorkoutPlanProgressionService } from '@/lib/workoutPlanProgressionService';
+import { ENABLE_OACP_FITNESS_LOGS } from '@/constants/applicationFeatures';
+import { fitnessLogService } from '@/lib/fitnessLogService';
+import { FitnessLog, FitnessLogDay } from '@/types/fitness-log';
+import { format, addDays } from 'date-fns';
 
 type Booking = {
   id: string;
@@ -101,6 +106,10 @@ export default function FitnessScreen() {
     readinessDeadline: Date;
     focusAreas: ('cardio' | 'strength' | 'agility')[];
   } | null>(null);
+  const [activeFitnessLog, setActiveFitnessLog] = useState<FitnessLog | null>(null);
+  const [fitnessLogLoading, setFitnessLogLoading] = useState(false);
+  const [logDays, setLogDays] = useState<FitnessLogDay[]>([]);
+  const [daysCompleted, setDaysCompleted] = useState(0);
   
   const { testResults, formatTime, getPersonalBests } = usePinTest();
   const { subscription, canAccessDigitalTest, canAccessTrainingPlan, trackDigitalTestUsage, getRemainingDigitalTests } = useSubscription();
@@ -147,7 +156,7 @@ export default function FitnessScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const handleSectionToggle = (section: 'tests' | 'workouts') => {
+  const handleSectionToggle = (section: 'tests' | 'workouts' | 'logs') => {
     // Check if user has completed personalized PREP plan
     const hasCompletedPersonalizedPlan = user?.has_completed_personalized_prep_plan;
     
@@ -211,9 +220,79 @@ export default function FitnessScreen() {
     }
   };
 
+  const loadActiveFitnessLog = async () => {
+    if (!user || !ENABLE_OACP_FITNESS_LOGS) return;
+    
+    setFitnessLogLoading(true);
+    try {
+      const log = await fitnessLogService.getActiveLog();
+      setActiveFitnessLog(log);
+      if (log) {
+        const days = await fitnessLogService.getDays(log.id);
+        setLogDays(days);
+        setDaysCompleted(days.filter(day => day.is_complete).length);
+      } else {
+        setLogDays([]);
+        setDaysCompleted(0);
+      }
+    } catch (error) {
+      console.error('Error loading active fitness log:', error);
+    } finally {
+      setFitnessLogLoading(false);
+    }
+  };
+
+  const handleResetLog = async () => {
+    if (!activeFitnessLog) return;
+
+    Alert.alert(
+      'Reset Fitness Log',
+      `Are you sure you want to reset your current fitness log? This will permanently delete all your progress and cannot be undone.\n\nCurrent progress: ${daysCompleted}/14 days completed`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Reset Log',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setFitnessLogLoading(true);
+              
+              // Delete the current log and all its days
+              await fitnessLogService.deleteLog(activeFitnessLog.id);
+              
+              // Clear local state
+              setActiveFitnessLog(null);
+              setLogDays([]);
+              setDaysCompleted(0);
+              
+              Alert.alert(
+                'Log Reset',
+                'Your fitness log has been successfully reset. You can now start a new 14-day log.',
+                [{ text: 'OK' }]
+              );
+            } catch (error) {
+              console.error('Error resetting fitness log:', error);
+              Alert.alert(
+                'Error',
+                'Failed to reset fitness log. Please try again.',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setFitnessLogLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   useEffect(() => {
     if (user) {
       loadBookings();
+      loadActiveFitnessLog();
     }
   }, [user]);
 
@@ -488,6 +567,7 @@ export default function FitnessScreen() {
             {!selectedWorkoutPlan && !user?.has_completed_personalized_prep_plan && ' (Complete Setup)'}
           </Text>
         </TouchableOpacity>
+        
       </View>
 
       {/* Test Practice Section */}
@@ -609,6 +689,218 @@ export default function FitnessScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* OACP Fitness Log Card */}
+          {ENABLE_OACP_FITNESS_LOGS && (
+            <View style={styles.fitnessLogSection}>
+              {activeFitnessLog ? (
+                <View style={styles.fitnessLogCard}>
+                  <View style={styles.fitnessLogCardContent}>
+                    {/* Header */}
+                    <View style={styles.fitnessLogCardHeader}>
+                      <View style={styles.fitnessLogCardHeaderLeft}>
+                        <View style={styles.fitnessLogCardIconContainer}>
+                          <ClipboardList size={24} color={Colors.primary} />
+                        </View>
+                        <View style={styles.fitnessLogCardTitleContainer}>
+                          <Text style={styles.fitnessLogCardTitle}>OACP 14-Day Fitness Log</Text>
+                          <Text style={styles.fitnessLogCardSubtitle}>Mandatory Activity & Wellness Tracking</Text>
+                        </View>
+                      </View>
+                      <View style={styles.fitnessLogCardBadge}>
+                        <Text style={styles.fitnessLogCardBadgeText}>
+                          {activeFitnessLog.status === 'completed' ? 'COMPLETED' : 'IN PROGRESS'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Document Info */}
+                    <View style={styles.fitnessLogCardDocumentInfo}>
+                      <View style={styles.fitnessLogCardInfoRow}>
+                        <Text style={styles.fitnessLogCardInfoLabel}>Period:</Text>
+                        <Text style={styles.fitnessLogCardInfoValue}>
+                          {format(new Date(activeFitnessLog.start_date), 'MMM dd, yyyy')} - {format(new Date(activeFitnessLog.end_date), 'MMM dd, yyyy')}
+                        </Text>
+                      </View>
+                      <View style={styles.fitnessLogCardInfoRow}>
+                        <Text style={styles.fitnessLogCardInfoLabel}>Status:</Text>
+                        <Text style={styles.fitnessLogCardInfoValue}>
+                          {activeFitnessLog.signed ? 'Signed & Certified' : 'Pending Signature'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Progress Section */}
+                    <View style={styles.fitnessLogCardProgressSection}>
+                      <View style={styles.fitnessLogCardProgressHeader}>
+                        <Text style={styles.fitnessLogCardProgressTitle}>Completion Progress</Text>
+                        <Text style={styles.fitnessLogCardProgressPercentage}>
+                          {Math.round((daysCompleted / 14) * 100)}%
+                        </Text>
+                      </View>
+                      <View style={styles.fitnessLogCardProgressBar}>
+                        <View style={[styles.fitnessLogCardProgressFill, { width: `${(daysCompleted / 14) * 100}%` }]} />
+                      </View>
+                      <Text style={styles.fitnessLogCardProgressText}>
+                        {daysCompleted} of 14 days completed
+                      </Text>
+                    </View>
+
+                    {/* Status Grid */}
+                    <View style={styles.fitnessLogCardStatusGrid}>
+                      <View style={styles.fitnessLogCardStatusItem}>
+                        <View style={styles.fitnessLogCardStatusIcon}>
+                          <CheckCircle2 size={20} color={Colors.success} />
+                        </View>
+                        <Text style={styles.fitnessLogCardStatusValue}>{daysCompleted}</Text>
+                        <Text style={styles.fitnessLogCardStatusLabel}>Days Completed</Text>
+                      </View>
+                      <View style={styles.fitnessLogCardStatusItem}>
+                        <View style={styles.fitnessLogCardStatusIcon}>
+                          <Clock size={20} color={Colors.warning} />
+                        </View>
+                        <Text style={styles.fitnessLogCardStatusValue}>{14 - daysCompleted}</Text>
+                        <Text style={styles.fitnessLogCardStatusLabel}>Days Remaining</Text>
+                      </View>
+                      <View style={styles.fitnessLogCardStatusItem}>
+                        <View style={styles.fitnessLogCardStatusIcon}>
+                          {activeFitnessLog.signed ? (
+                            <CheckCircle2 size={20} color={Colors.success} />
+                          ) : (
+                            <XCircle size={20} color={Colors.error} />
+                          )}
+                        </View>
+                        <Text style={styles.fitnessLogCardStatusValue}>
+                          {activeFitnessLog.signed ? 'Yes' : 'No'}
+                        </Text>
+                        <Text style={styles.fitnessLogCardStatusLabel}>Signed</Text>
+                      </View>
+                    </View>
+
+                    {/* Action Buttons */}
+                    <View style={styles.fitnessLogCardActions}>
+                      <TouchableOpacity 
+                        style={styles.fitnessLogCardPrimaryButton}
+                        onPress={() => {
+                          const today = format(new Date(), 'yyyy-MM-dd');
+                          const logStartDate = new Date(activeFitnessLog.start_date);
+                          const dayIndex = Math.floor((new Date(today).getTime() - logStartDate.getTime()) / (1000 * 60 * 60 * 24));
+                          const targetDate = format(addDays(logStartDate, Math.max(0, Math.min(dayIndex, 13))), 'yyyy-MM-dd');
+                          router.push(`/fitness/logs/day/${targetDate}?logId=${activeFitnessLog.id}`);
+                        }}
+                      >
+                        <Calendar size={18} color={Colors.white} />
+                        <Text style={styles.fitnessLogCardPrimaryButtonText}>Continue Today's Entry</Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity 
+                        style={styles.fitnessLogCardSecondaryButton}
+                        onPress={() => router.push(`/fitness/logs/summary?logId=${activeFitnessLog.id}`)}
+                      >
+                        <ClipboardList size={18} color={Colors.primary} />
+                        <Text style={styles.fitnessLogCardSecondaryButtonText}>Preview & Export</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Additional Actions */}
+                    <View style={styles.fitnessLogCardAdditionalActions}>
+                      {daysCompleted === 14 && !activeFitnessLog.signed && (
+                        <TouchableOpacity 
+                          style={styles.fitnessLogCardSignButton}
+                          onPress={() => router.push(`/fitness/logs/sign?logId=${activeFitnessLog.id}`)}
+                        >
+                          <CheckCircle2 size={16} color={Colors.white} />
+                          <Text style={styles.fitnessLogCardSignButtonText}>Finish & Sign Log</Text>
+                        </TouchableOpacity>
+                      )}
+                      
+                      <TouchableOpacity 
+                        style={styles.fitnessLogCardResetButton}
+                        onPress={handleResetLog}
+                      >
+                        <XCircle size={16} color={Colors.error} />
+                        <Text style={styles.fitnessLogCardResetButtonText}>Reset Log</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.fitnessLogCard}
+                  onPress={() => router.push('/fitness/logs/start')}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.fitnessLogCardContent}>
+                    {/* Header */}
+                    <View style={styles.fitnessLogCardHeader}>
+                      <View style={styles.fitnessLogCardHeaderLeft}>
+                        <View style={styles.fitnessLogCardIconContainer}>
+                          <ClipboardList size={24} color={Colors.primary} />
+                        </View>
+                        <View style={styles.fitnessLogCardTitleContainer}>
+                          <Text style={styles.fitnessLogCardTitle}>OACP 14-Day Fitness Log</Text>
+                          <Text style={styles.fitnessLogCardSubtitle}>Mandatory Activity & Wellness Tracking</Text>
+                        </View>
+                      </View>
+                      <View style={styles.fitnessLogCardBadge}>
+                        <Text style={styles.fitnessLogCardBadgeText}>REQUIRED</Text>
+                      </View>
+                    </View>
+
+                    {/* Document Info */}
+                    <View style={styles.fitnessLogCardDocumentInfo}>
+                      <View style={styles.fitnessLogCardInfoRow}>
+                        <Text style={styles.fitnessLogCardInfoLabel}>Type:</Text>
+                        <Text style={styles.fitnessLogCardInfoValue}>Official OACP Requirement</Text>
+                      </View>
+                      <View style={styles.fitnessLogCardInfoRow}>
+                        <Text style={styles.fitnessLogCardInfoLabel}>Duration:</Text>
+                        <Text style={styles.fitnessLogCardInfoValue}>14 consecutive days</Text>
+                      </View>
+                      <View style={styles.fitnessLogCardInfoRow}>
+                        <Text style={styles.fitnessLogCardInfoLabel}>Status:</Text>
+                        <Text style={styles.fitnessLogCardInfoValue}>Not Started</Text>
+                      </View>
+                    </View>
+
+                    {/* Description */}
+                    <View style={styles.fitnessLogCardDescriptionSection}>
+                      <Text style={styles.fitnessLogCardDescriptionTitle}>What's Required:</Text>
+                      <Text style={styles.fitnessLogCardDescriptionText}>
+                        Complete daily tracking of physical activities, stress management methods, and sleep patterns for 14 consecutive days as part of your OACP certification requirements.
+                      </Text>
+                    </View>
+
+                    {/* Requirements List */}
+                    <View style={styles.fitnessLogCardRequirements}>
+                      <Text style={styles.fitnessLogCardRequirementsTitle}>Daily Requirements:</Text>
+                      <View style={styles.fitnessLogCardRequirementItem}>
+                        <CheckCircle size={16} color={Colors.success} />
+                        <Text style={styles.fitnessLogCardRequirementText}>Physical activity (run, strength, other)</Text>
+                      </View>
+                      <View style={styles.fitnessLogCardRequirementItem}>
+                        <CheckCircle size={16} color={Colors.success} />
+                        <Text style={styles.fitnessLogCardRequirementText}>Stress management method</Text>
+                      </View>
+                      <View style={styles.fitnessLogCardRequirementItem}>
+                        <CheckCircle size={16} color={Colors.success} />
+                        <Text style={styles.fitnessLogCardRequirementText}>Sleep hours tracking</Text>
+                      </View>
+                    </View>
+
+                    {/* Action Button */}
+                    <TouchableOpacity 
+                      style={styles.fitnessLogCardStartButton}
+                      onPress={() => router.push('/fitness/logs/start')}
+                    >
+                      <ArrowRight size={18} color={Colors.white} />
+                      <Text style={styles.fitnessLogCardStartButtonText}>Start 14-Day Log</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
           {/* Modern In-Person Booking */}
           <View style={styles.bookingSection}>
             <View style={styles.sectionHeader}>
@@ -693,6 +985,7 @@ export default function FitnessScreen() {
         />
       )}
 
+
       {/* Upsell Modal */}
       <UpsellModal
         visible={showUpsellModal}
@@ -772,6 +1065,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: borderRadius.lg,
     padding: 4,
+    gap: 4,
   },
   toggleButton: {
     flex: 1,
@@ -779,17 +1073,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     borderRadius: borderRadius.md,
-    gap: 8,
+    gap: 6,
+    minHeight: 48,
   },
   toggleButtonActive: {
     backgroundColor: Colors.primary,
   },
   toggleButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.textSecondary,
+    textAlign: 'center',
+    flexShrink: 1,
   },
   toggleButtonTextActive: {
     color: Colors.white,
@@ -1611,5 +1908,352 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: Colors.white,
+  },
+
+  // Logs Card
+  logsCard: {
+    backgroundColor: Colors.white,
+    borderRadius: borderRadius.xl,
+    marginHorizontal: 20,
+    ...shadows.heavy,
+    elevation: 8,
+    shadowColor: Colors.text,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  logsCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+  },
+  logsCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  logsCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  logsCardInfo: {
+    flex: 1,
+  },
+  logsCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.primary,
+    marginBottom: 4,
+  },
+  logsCardSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  logsCardRight: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  // Fitness Log Section Styles
+  fitnessLogSection: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+  },
+  
+  // Fitness Log Card Styles
+  fitnessLogCard: {
+    backgroundColor: Colors.white,
+    borderRadius: borderRadius.xl,
+    ...shadows.medium,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  fitnessLogCardContent: {
+    padding: 24,
+  },
+  
+  // Header Styles
+  fitnessLogCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  fitnessLogCardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  fitnessLogCardIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  fitnessLogCardTitleContainer: {
+    flex: 1,
+  },
+  fitnessLogCardTitle: {
+    ...typography.headingMedium,
+    color: Colors.text,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  fitnessLogCardSubtitle: {
+    ...typography.bodySmall,
+    color: Colors.textSecondary,
+  },
+  fitnessLogCardBadge: {
+    backgroundColor: Colors.primary + '15',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+  },
+  fitnessLogCardBadgeText: {
+    ...typography.labelSmall,
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  
+  // Document Info Styles
+  fitnessLogCardDocumentInfo: {
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  fitnessLogCardInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  fitnessLogCardInfoLabel: {
+    ...typography.labelMedium,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  fitnessLogCardInfoValue: {
+    ...typography.bodyMedium,
+    color: Colors.text,
+    fontWeight: '500',
+  },
+  
+  // Progress Styles
+  fitnessLogCardProgressSection: {
+    marginBottom: 20,
+  },
+  fitnessLogCardProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  fitnessLogCardProgressTitle: {
+    ...typography.labelLarge,
+    color: Colors.text,
+    fontWeight: '600',
+  },
+  fitnessLogCardProgressPercentage: {
+    ...typography.headingSmall,
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  fitnessLogCardProgressBar: {
+    height: 8,
+    backgroundColor: Colors.border,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  fitnessLogCardProgressFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: borderRadius.full,
+  },
+  fitnessLogCardProgressText: {
+    ...typography.bodySmall,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  
+  // Status Grid Styles
+  fitnessLogCardStatusGrid: {
+    flexDirection: 'row',
+    marginBottom: 24,
+    gap: 16,
+  },
+  fitnessLogCardStatusItem: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  fitnessLogCardStatusIcon: {
+    marginBottom: 8,
+  },
+  fitnessLogCardStatusValue: {
+    ...typography.headingSmall,
+    color: Colors.text,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  fitnessLogCardStatusLabel: {
+    ...typography.labelSmall,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  
+  // Action Buttons Styles
+  fitnessLogCardActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  fitnessLogCardPrimaryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  fitnessLogCardPrimaryButtonText: {
+    ...typography.labelLarge,
+    color: Colors.white,
+    fontWeight: '600',
+  },
+  fitnessLogCardSecondaryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  fitnessLogCardSecondaryButtonText: {
+    ...typography.labelLarge,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  
+  // Additional Actions Styles
+  fitnessLogCardAdditionalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  fitnessLogCardSignButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.success,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  fitnessLogCardSignButtonText: {
+    ...typography.labelMedium,
+    color: Colors.white,
+    fontWeight: '600',
+  },
+  fitnessLogCardResetButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.error,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  fitnessLogCardResetButtonText: {
+    ...typography.labelMedium,
+    color: Colors.error,
+    fontWeight: '600',
+  },
+  
+  // Start Log Card Specific Styles
+  fitnessLogCardDescriptionSection: {
+    marginBottom: 20,
+  },
+  fitnessLogCardDescriptionTitle: {
+    ...typography.labelLarge,
+    color: Colors.text,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  fitnessLogCardDescriptionText: {
+    ...typography.bodyMedium,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  fitnessLogCardRequirements: {
+    marginBottom: 24,
+  },
+  fitnessLogCardRequirementsTitle: {
+    ...typography.labelLarge,
+    color: Colors.text,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  fitnessLogCardRequirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  fitnessLogCardRequirementText: {
+    ...typography.bodyMedium,
+    color: Colors.textSecondary,
+  },
+  fitnessLogCardStartButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  fitnessLogCardStartButtonText: {
+    ...typography.labelLarge,
+    color: Colors.white,
+    fontWeight: '700',
   },
 });

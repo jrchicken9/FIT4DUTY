@@ -75,7 +75,7 @@ export default function EmptyState({
       case 'application':
         return {
           title: 'Begin Your Application',
-          subtitle: 'Start your police application journey step by step',
+          subtitle: 'Complete your application requirements and track progress',
           actionText: 'Start Application',
           icon: <Target size={sizes.xxxl} color={Colors.accent} />,
         };

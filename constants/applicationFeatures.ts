@@ -88,4 +88,7 @@ export const applicationFeatures: AppFeature[] = [
   }
 ];
 
+// Feature flags
+export const ENABLE_OACP_FITNESS_LOGS = true;
+
 export default applicationFeatures;

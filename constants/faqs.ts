@@ -27,7 +27,7 @@ const faqs: FAQ[] = [
   {
     id: "faq-4",
     question: "What is the OACP Certificate and why do I need it?",
-    answer: "The Ontario Association of Chiefs of Police (OACP) Certificate is a standardized testing process that most Ontario police services require before applying. It includes physical testing (PREP), cognitive/aptitude testing, behavioral assessment, and a vision/hearing test. The certificate is valid for 2 years and allows you to apply to multiple police services without repeating these assessments. You need to obtain this certificate before applying to most Ontario police services.",
+    answer: "The Ontario Association of Chiefs of Police (OACP) Certificate is Ontario's standardized pre-screening program for police applicants. It costs $250 CAD and includes Part A (admin forms, fitness log, medical examination), Part B (SSPO cognitive assessment), and Part C (PRF-R personality assessment). The certificate is valid for 12 months from issue date, with re-testing available after 10 months. Testing is done online with live proctoring via eProctor Canada. You have 6 months from purchase to complete all components and must register your proctor account within 24 hours of receiving the email.",
     category: "Application",
   },
   {
@@ -63,7 +63,7 @@ const faqs: FAQ[] = [
   {
     id: "faq-10",
     question: "Can I apply to multiple police services at the same time?",
-    answer: "Yes, you can and should apply to multiple police services simultaneously. With an OACP Certificate, you can apply to any participating Ontario police service within the certificate's 2-year validity period. Each service has its own hiring process and timeline, so applying to multiple services increases your chances of being hired sooner. Just be sure to keep track of where you've applied and the status of each application.",
+    answer: "Yes, you can and should apply to multiple police services simultaneously. With an OACP Certificate, you can apply to any participating Ontario police service within the certificate's 12-month validity period. Each service has its own hiring process and timeline, so applying to multiple services increases your chances of being hired sooner. Just be sure to keep track of where you've applied and the status of each application.",
     category: "Application",
   },
 ];

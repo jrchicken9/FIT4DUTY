@@ -45,7 +45,7 @@ export default function HeroHeader({
 
   const getMotivationalMessage = () => {
     if (applicationProgress === 0) {
-      return 'Ready to start your police career journey?';
+      return 'Ready to begin your police application process?';
     } else if (applicationProgress < 50) {
       return 'Great progress! Keep building momentum.';
     } else if (applicationProgress < 100) {

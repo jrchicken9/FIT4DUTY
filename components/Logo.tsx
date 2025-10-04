@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Shield, Star } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 
 interface LogoProps {
@@ -63,18 +64,22 @@ export default function Logo({
           iconColor: Colors.white,
           textColor: Colors.white,
           backgroundColor: 'transparent',
+          showGradient: false, // Don't show gradient for light variant
         };
       case 'dark':
         return {
-          iconColor: Colors.text,
+          iconColor: Colors.white,
           textColor: Colors.text,
           backgroundColor: 'transparent',
+          showGradient: false, // Don't show gradient for dark variant
         };
       default: // primary
         return {
-          iconColor: Colors.primary,
+          iconColor: Colors.white,
           textColor: Colors.primary,
           backgroundColor: 'transparent',
+          showGradient: true, // Show gradient for primary variant
+          gradientColors: ['#3B82F6', '#1E40AF'], // Blue gradient from light to dark
         };
     }
   };
@@ -90,53 +95,43 @@ export default function Logo({
           width: sizes.containerSize,
           height: sizes.containerSize,
           borderRadius: sizes.containerSize / 6,
-          backgroundColor: colors.backgroundColor,
         }
       ]}>
-        {/* Background gradient effect */}
-        <View style={[
-          styles.gradientBackground,
-          {
-            width: sizes.containerSize,
-            height: sizes.containerSize,
-            borderRadius: sizes.containerSize / 6,
-          }
-        ]} />
+        {/* Blue gradient background - only for primary variant */}
+        {colors.showGradient && (
+          <LinearGradient
+            colors={colors.gradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.gradientBackground,
+              {
+                width: sizes.containerSize,
+                height: sizes.containerSize,
+                borderRadius: sizes.containerSize / 6,
+              }
+            ]}
+          />
+        )}
         
-        {/* Main shield */}
-        <Shield 
-          size={sizes.iconSize} 
-          color={colors.iconColor} 
-          fill={variant === 'primary' ? Colors.primary + '15' : 'transparent'}
-          strokeWidth={2.5}
-        />
-        
-        {/* Star accent */}
-        <View style={[
-          styles.starContainer,
-          {
-            top: sizes.containerSize * 0.15,
-            right: sizes.containerSize * 0.15,
-          }
-        ]}>
-          <Star 
-            size={sizes.iconSize * 0.35} 
-            color={Colors.policeRed} 
-            fill={Colors.policeRed}
+        {/* White shield outline */}
+        <View style={styles.shieldContainer}>
+          <Shield 
+            size={sizes.iconSize} 
+            color={colors.iconColor}
+            fill="transparent"
+            strokeWidth={2}
           />
         </View>
         
-        {/* Border accent */}
-        <View style={[
-          styles.borderAccent,
-          {
-            width: sizes.containerSize,
-            height: sizes.containerSize,
-            borderRadius: sizes.containerSize / 6,
-            borderWidth: variant === 'primary' ? 2 : 1,
-            borderColor: variant === 'primary' ? Colors.primary + '30' : 'transparent',
-          }
-        ]} />
+        {/* White star inside shield */}
+        <View style={styles.starContainer}>
+          <Star 
+            size={sizes.iconSize * 0.4} 
+            color={colors.iconColor}
+            fill={colors.iconColor}
+          />
+        </View>
       </View>
       {showText && (
         <Text style={[
@@ -162,26 +157,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    shadowColor: Colors.primary,
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
   gradientBackground: {
     position: 'absolute',
-    backgroundColor: Colors.primary + '08',
-    borderWidth: 1,
-    borderColor: Colors.primary + '15',
+  },
+  shieldContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   starContainer: {
     position: 'absolute',
-  },
-  borderAccent: {
-    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   logoText: {
     fontWeight: '800',

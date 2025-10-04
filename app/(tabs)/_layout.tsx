@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import Colors from "@/constants/colors";
 import NotificationBell from "@/components/NotificationBell";
 import NotificationPanel from "@/components/NotificationPanel";
@@ -20,20 +21,29 @@ export default function TabLayout() {
           tabBarActiveTintColor: Colors.white,
           headerShown: true,
           tabBarStyle: {
-            backgroundColor: Colors.primary,
+            backgroundColor: 'transparent',
             borderTopColor: Colors.policeRedBorder,
             borderTopWidth: 2,
-            height: 55 + insets.bottom,
-            paddingBottom: insets.bottom + 4,
-            paddingTop: 4,
+            height: 65 + insets.bottom,
+            paddingBottom: insets.bottom + 8,
+            paddingTop: 8,
+            paddingHorizontal: 8,
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
             ...shadows.medium,
           },
+          tabBarBackground: () => (
+            <LinearGradient
+              colors={['#1E40AF', '#3B82F6']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 1, y: 0 }}
+              style={{ flex: 1 }}
+            />
+          ),
           headerStyle: {
-            backgroundColor: Colors.primary,
+            backgroundColor: 'transparent',
             borderBottomColor: Colors.policeRedBorder,
             borderBottomWidth: 1,
             height: 100, // Standardized header height
@@ -41,6 +51,14 @@ export default function TabLayout() {
             shadowOpacity: 0, // Remove iOS shadow
             shadowOffset: { width: 0, height: 0 }, // Remove shadow offset
           },
+          headerBackground: () => (
+            <LinearGradient
+              colors={['#3B82F6', '#1E40AF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ flex: 1 }}
+            />
+          ),
           headerTintColor: Colors.white,
           headerTitleStyle: {
             ...typography.headingMedium,
@@ -64,7 +82,8 @@ export default function TabLayout() {
             fontWeight: "600",
             marginTop: 1,
             color: Colors.white + 'CC',
-            fontSize: 11,
+            fontSize: 10,
+            maxWidth: 60,
           },
           tabBarIconStyle: {
             marginTop: 1,
@@ -74,8 +93,9 @@ export default function TabLayout() {
         <Tabs.Screen
           name="dashboard"
           options={{
-            title: "Dashboard",
+            title: "Home",
             tabBarIcon: ({ focused }) => <TabIcon name="dashboard" focused={focused} size={20} />,
+            href: "/dashboard",
           }}
         />
         <Tabs.Screen
@@ -83,6 +103,7 @@ export default function TabLayout() {
           options={{
             title: "Application",
             tabBarIcon: ({ focused }) => <TabIcon name="application" focused={focused} size={20} />,
+            href: "/application",
           }}
         />
         <Tabs.Screen
@@ -90,6 +111,7 @@ export default function TabLayout() {
           options={{
             title: "Fitness",
             tabBarIcon: ({ focused }) => <TabIcon name="fitness" focused={focused} size={20} />,
+            href: "/fitness",
           }}
         />
         {/* Temporarily hidden Community tab
@@ -106,6 +128,7 @@ export default function TabLayout() {
           options={{
             title: "Profile",
             tabBarIcon: ({ focused }) => <TabIcon name="profile" focused={focused} size={20} />,
+            href: "/profile",
           }}
         />
       </Tabs>

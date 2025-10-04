@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { LinearGradient } from "expo-linear-gradient";
 import Colors from "@/constants/colors";
 import { typography } from "@/constants/designSystem";
 import { AuthProvider } from "@/context/AuthContext";
@@ -28,8 +29,16 @@ import OfflineNotice from "@/components/OfflineNotice";
 const getBlueHeaderOptions = (title: string) => ({
   title,
   headerStyle: {
-    backgroundColor: Colors.primary,
+    backgroundColor: 'transparent',
   },
+  headerBackground: () => (
+    <LinearGradient
+      colors={['#3B82F6', '#1E40AF']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={{ flex: 1 }}
+    />
+  ),
   headerTintColor: Colors.white,
   headerTitleStyle: {
     fontSize: 20,
@@ -91,8 +100,16 @@ function RootLayoutNav() {
           headerTitle: () => <Logo size="small" variant="light" showText={false} />,
           headerTitleAlign: 'center',
           headerStyle: {
-            backgroundColor: Colors.primary,
+            backgroundColor: 'transparent',
           },
+          headerBackground: () => (
+            <LinearGradient
+              colors={['#3B82F6', '#1E40AF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ flex: 1 }}
+            />
+          ),
           headerTintColor: Colors.white,
         }} 
       />
@@ -102,8 +119,16 @@ function RootLayoutNav() {
           headerTitle: () => <Logo size="small" variant="light" showText={false} />,
           headerTitleAlign: 'center',
           headerStyle: {
-            backgroundColor: Colors.primary,
+            backgroundColor: 'transparent',
           },
+          headerBackground: () => (
+            <LinearGradient
+              colors={['#3B82F6', '#1E40AF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ flex: 1 }}
+            />
+          ),
           headerTintColor: Colors.white,
         }} 
       />
@@ -113,8 +138,16 @@ function RootLayoutNav() {
           headerTitle: () => <Logo size="small" variant="light" showText={false} />,
           headerTitleAlign: 'center',
           headerStyle: {
-            backgroundColor: Colors.primary,
+            backgroundColor: 'transparent',
           },
+          headerBackground: () => (
+            <LinearGradient
+              colors={['#3B82F6', '#1E40AF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ flex: 1 }}
+            />
+          ),
           headerTintColor: Colors.white,
         }} 
       />

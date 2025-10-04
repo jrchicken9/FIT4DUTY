@@ -147,49 +147,54 @@ const applicationSteps: ApplicationStep[] = [
   {
     id: "oacp",
     title: "OACP Testing & Certification",
-    description: "Master the OACP Certificate test with practice questions and progress tracking.",
+    description: "Ontario's standardized pre-screening program for police applicants. Certificate valid for 12 months, $250 CAD fee, with live-online proctoring via eProctor Canada.",
     requirements: [
-      "Complete written test",
-      "Pass physical test",
-      "Submit documentation",
-      "Pay fees",
+      "Purchase OACP Certificate package ($250 CAD)",
+      "Complete Part A: Consent forms, Fitness Log (14 days), Medical examination",
+      "Complete Part B: SSPO cognitive assessment (online, proctored)",
+      "Complete Part C: PRF-R personality assessment (online, proctored)",
+      "Register proctor account within 24 hours of email",
     ],
     tips: [
-      "Apply well in advance",
-      "Prepare thoroughly",
-      "Keep documentation organized",
+      "Register your proctor account within 24 hours of receiving the email",
+      "Plan for one 60-90 minute sitting for Parts B & C together",
+      "Use study information provided in Part B/C email package",
+      "Track timelines: 6-month completion window, fitness log valid 1 month, medical valid 2 years",
+      "Test in a quiet, uninterrupted space for live-online proctoring",
     ],
-    estimatedTime: "2-3 months",
+    estimatedTime: "6 months (completion window)",
     resources: [
       {
         title: "OACP Official Website",
         url: "https://www.oacp.ca/",
       },
       {
-        title: "OACP Certificate Application",
+        title: "OACP Certificate Testing",
         url: "https://www.oacpcertificate.ca/",
       },
     ],
     nextSteps: ["pre-application-prep"],
     monetization: {
       freePreview: {
-        intro: "Learn about the OACP Certificate process and what it involves.",
+        intro: "Learn about Ontario's standardized OACP Certificate process with updated 2024-2025 testing structure.",
         tips: [
           "The OACP Certificate is required for most Ontario police services",
-          "The process includes written and physical components",
-          "Apply early as processing can take several months"
+          "New structure includes live-online proctoring via eProctor Canada (Jan 6, 2025)",
+          "Part C now uses PRF-R for Policing (replaced ESQ2 effective June 1, 2024)",
+          "Certificate valid for 12 months, re-testing available after 10 months"
         ],
-        basicGuidance: "The OACP Certificate is your first major step toward becoming a police officer in Ontario."
+        basicGuidance: "The OACP Certificate is your standardized pre-screening step for police applications in Ontario."
       },
       premiumUpgrade: {
-        title: "OACP Prep Masterclass",
-        description: "Access comprehensive OACP preparation guides, strategies, and study tools.",
+        title: "Complete OACP Prep Program",
+        description: "Access comprehensive OACP preparation with updated testing structure, study materials, and timeline management.",
         features: [
-          "Complete OACP prep guides",
-          "Study strategies and techniques",
-          "Practice test materials",
-          "Timeline optimization",
-          "Expert tips and insights"
+          "Updated 2024-2025 OACP prep guides",
+          "SSPO cognitive test preparation strategies",
+          "PRF-R personality assessment guidance",
+          "Timeline optimization and deadline tracking",
+          "Live-online proctoring preparation tips",
+          "Fitness log and medical examination guides"
         ]
       },
       oneTimeServices: []

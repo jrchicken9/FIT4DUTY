@@ -201,7 +201,7 @@ export default function ApplicationTab() {
               <View style={styles.hubTextContainer}>
                 <Text style={styles.hubTitle}>Application Hub</Text>
                 <Text style={styles.hubSubtitle}>
-                  {completedStepsCount > 0 ? 'Continue your police application journey' : 'Start your police application journey'}
+                  {completedStepsCount > 0 ? 'Track your application progress and requirements' : 'Begin your comprehensive application process'}
                 </Text>
                 <View style={styles.hubBadge}>
                   <Target size={14} color={Colors.white} />
