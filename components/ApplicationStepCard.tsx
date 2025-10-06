@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { ChevronRight, Clock, CheckCircle, Target, BookOpen, Users, Shield, FileText, Dumbbell, Calendar } from "lucide-react-native";
+import { ChevronRight, Clock, CheckCircle, Target, BookOpen, Users, Shield, FileText, Dumbbell, Calendar, Brain } from "lucide-react-native";
 import { router } from "expo-router";
 import Colors from "@/constants/colors";
 import type { ApplicationStep } from "@/constants/applicationSteps";
@@ -78,6 +78,13 @@ const ApplicationStepCard = ({
           features: ['STAR Method Practice', 'Competency Examples', 'Behavioral Questions', 'Interview Simulation'],
           highlight: 'ECI Prep',
           color: Colors.accent
+        };
+      case 'psychological-assessment':
+        return {
+          icon: <Brain size={24} color={Colors.primary} />,
+          features: ['Assessment Overview', 'Preparation Guide', 'Service Policies', 'FAQ & Timeline'],
+          highlight: 'Mental Fitness',
+          color: Colors.secondary
         };
       default:
         return {

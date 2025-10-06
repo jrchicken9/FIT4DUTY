@@ -1,0 +1,931 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>OACP Fitness Log - John Smith</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-size: 11pt;
+          line-height: 1.4;
+          color: #1e1b4b;
+          background: white;
+        }
+        
+        .container {
+          max-width: 8.5in;
+          margin: 0 auto;
+          padding: 0.5in;
+        }
+        
+        .header {
+          text-align: center;
+          margin-bottom: 30px;
+          border-bottom: 2px solid #1e40af;
+          padding-bottom: 20px;
+        }
+        
+        .header h1 {
+          font-size: 24pt;
+          font-weight: 800;
+          color: #1e40af;
+          margin-bottom: 10px;
+        }
+        
+        .header h2 {
+          font-size: 16pt;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 15px;
+        }
+        
+        .header-info {
+          display: flex;
+          justify-content: space-between;
+          font-size: 12pt;
+          color: #6b7280;
+        }
+        
+        .log-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 30px;
+          font-size: 10pt;
+        }
+        
+        .log-table th,
+        .log-table td {
+          border: 1px solid #d1d5db;
+          padding: 8px;
+          text-align: left;
+          vertical-align: top;
+        }
+        
+        .log-table th {
+          background-color: #f3f4f6;
+          font-weight: 600;
+          color: #1e1b4b;
+          text-align: center;
+        }
+        
+        .log-table .date-col {
+          width: 80px;
+          text-align: center;
+        }
+        
+        .log-table .run-col {
+          width: 120px;
+        }
+        
+        .log-table .strength-col {
+          width: 140px;
+        }
+        
+        .log-table .activity-col {
+          width: 120px;
+        }
+        
+        .log-table .stress-col {
+          width: 100px;
+        }
+        
+        .log-table .sleep-col {
+          width: 60px;
+          text-align: center;
+        }
+        
+        .activity-row {
+          margin-bottom: 4px;
+        }
+        
+        .activity-row:last-child {
+          margin-bottom: 0;
+        }
+        
+        .activity-label {
+          font-weight: 600;
+          color: #374151;
+        }
+        
+        .activity-value {
+          color: #6b7280;
+        }
+        
+        .empty-cell {
+          color: #9ca3af;
+          font-style: italic;
+        }
+        
+        .required-field {
+          font-weight: 600;
+          color: #1e40af;
+        }
+        
+        .summary-section {
+          margin-bottom: 30px;
+          padding: 20px;
+          background-color: #f8fafc;
+          border-radius: 8px;
+        }
+        
+        .summary-section h3 {
+          font-size: 14pt;
+          font-weight: 600;
+          color: #1e1b4b;
+          margin-bottom: 15px;
+        }
+        
+        .summary-stats {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        
+        .stat-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 5px 0;
+        }
+        
+        .stat-label {
+          font-weight: 600;
+          color: #374151;
+        }
+        
+        .stat-value {
+          color: #1e40af;
+          font-weight: 600;
+        }
+        
+        .footer {
+          margin-top: 40px;
+          border-top: 2px solid #1e40af;
+          padding-top: 20px;
+        }
+        
+        .attestation {
+          margin-bottom: 30px;
+        }
+        
+        .attestation h3 {
+          font-size: 14pt;
+          font-weight: 600;
+          color: #1e1b4b;
+          margin-bottom: 15px;
+        }
+        
+        .attestation-text {
+          font-size: 11pt;
+          line-height: 1.6;
+          color: #374151;
+          margin-bottom: 20px;
+        }
+        
+        .signature-section {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+        }
+        
+        .signature-info {
+          flex: 1;
+        }
+        
+        .signature-line {
+          border-bottom: 1px solid #1e1b4b;
+          width: 200px;
+          margin-bottom: 5px;
+        }
+        
+        .signature-label {
+          font-size: 10pt;
+          color: #6b7280;
+        }
+        
+        .completion-info {
+          text-align: right;
+          font-size: 10pt;
+          color: #6b7280;
+          margin-top: 20px;
+        }
+        
+        @media print {
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>OACP Fitness Log</h1>
+          <h2>14-Day Physical Activity & Wellness Tracking</h2>
+          <div class="header-info">
+            <div>
+              <strong>Candidate:</strong> John Smith
+            </div>
+            <div>
+              <strong>Period:</strong> 2024-01-14 to 2024-01-27
+            </div>
+          </div>
+          <div class="header-info">
+            <div>
+              <strong>Email:</strong> john.smith@email.com
+            </div>
+            <div>
+              <strong>Status:</strong> Completed & Signed
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-section">
+          <h3>14-Day Summary</h3>
+          <div class="summary-stats">
+            <div class="stat-row">
+              <span class="stat-label">Completed Days:</span>
+              <span class="stat-value">14/14</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Total Run Time:</span>
+              <span class="stat-value">273 minutes</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Total Run Distance:</span>
+              <span class="stat-value">48.1 km</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Total Strength Training:</span>
+              <span class="stat-value">500 minutes</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Total Other Activities:</span>
+              <span class="stat-value">655 minutes</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Average Sleep:</span>
+              <span class="stat-value">7.9 hours</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Stress Management Methods:</span>
+              <span class="stat-value">Meditation, Deep breathing exercises, Reading, Music therapy, Nature walk, Journaling, Beach meditation, Progressive muscle relaxation, Guided meditation, Breathing exercises, Dance therapy, Water meditation, Yoga meditation, Reflection and gratitude</span>
+            </div>
+          </div>
+        </div>
+
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th class="date-col">Date</th>
+              <th class="run-col">Run</th>
+              <th class="strength-col">Strength Training</th>
+              <th class="activity-col">Other Activity</th>
+              <th class="stress-col">Stress Management</th>
+              <th class="sleep-col">Sleep (hrs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+      <tr>
+        <td class="date-col">
+          <strong>Day 1</strong><br>
+          2024-01-14
+        </td>
+        <td class="run-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">30 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Distance:</span> 
+        <span class="activity-value">5.2 km</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Central Park</span>
+      </div>
+        </td>
+        <td class="strength-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">45 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Environment:</span> 
+        <span class="activity-value">Gym</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Split:</span> 
+        <span class="activity-value">Upper Body</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Description:</span> 
+        <span class="activity-value">Bench press, rows, shoulder press, bicep curls</span>
+      </div>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Yoga</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">20 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Home</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Meditation</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">7.5</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 2</strong><br>
+          2024-01-15
+        </td>
+        <td class="run-col">
+          <span class="empty-cell">No run</span>
+        </td>
+        <td class="strength-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">60 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Environment:</span> 
+        <span class="activity-value">Gym</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Split:</span> 
+        <span class="activity-value">Lower Body</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Description:</span> 
+        <span class="activity-value">Squats, deadlifts, lunges, calf raises</span>
+      </div>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Swimming</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">30 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Community Pool</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Deep breathing exercises</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">8</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 3</strong><br>
+          2024-01-16
+        </td>
+        <td class="run-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">25 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Distance:</span> 
+        <span class="activity-value">4.1 km</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Neighborhood</span>
+      </div>
+        </td>
+        <td class="strength-col">
+          <span class="empty-cell">No strength training</span>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Basketball</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">45 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Local Court</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Reading</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">7</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 4</strong><br>
+          2024-01-17
+        </td>
+        <td class="run-col">
+          <span class="empty-cell">No run</span>
+        </td>
+        <td class="strength-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">50 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Environment:</span> 
+        <span class="activity-value">Gym</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Split:</span> 
+        <span class="activity-value">Full Body</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Description:</span> 
+        <span class="activity-value">Circuit training with weights</span>
+      </div>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Walking</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">20 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Office break</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Music therapy</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">6.5</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 5</strong><br>
+          2024-01-18
+        </td>
+        <td class="run-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">35 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Distance:</span> 
+        <span class="activity-value">6 km</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Trail</span>
+      </div>
+        </td>
+        <td class="strength-col">
+          <span class="empty-cell">No strength training</span>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Hiking</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">90 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Mountain Trail</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Nature walk</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">8.5</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 6</strong><br>
+          2024-01-19
+        </td>
+        <td class="run-col">
+          <span class="empty-cell">No run</span>
+        </td>
+        <td class="strength-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">75 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Environment:</span> 
+        <span class="activity-value">Home</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Split:</span> 
+        <span class="activity-value">Upper Body</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Description:</span> 
+        <span class="activity-value">Push-ups, pull-ups, dumbbell exercises</span>
+      </div>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Cycling</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">60 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">City bike path</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Journaling</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">9</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 7</strong><br>
+          2024-01-20
+        </td>
+        <td class="run-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">40 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Distance:</span> 
+        <span class="activity-value">7.5 km</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Beach</span>
+      </div>
+        </td>
+        <td class="strength-col">
+          <span class="empty-cell">No strength training</span>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Beach volleyball</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">45 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Beach court</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Beach meditation</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">8</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 8</strong><br>
+          2024-01-21
+        </td>
+        <td class="run-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">28 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Distance:</span> 
+        <span class="activity-value">4.8 km</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Track</span>
+      </div>
+        </td>
+        <td class="strength-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">55 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Environment:</span> 
+        <span class="activity-value">Gym</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Split:</span> 
+        <span class="activity-value">Lower Body</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Description:</span> 
+        <span class="activity-value">Squats, leg press, hamstring curls</span>
+      </div>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Stretching</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">15 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Gym</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Progressive muscle relaxation</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">7.5</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 9</strong><br>
+          2024-01-22
+        </td>
+        <td class="run-col">
+          <span class="empty-cell">No run</span>
+        </td>
+        <td class="strength-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">65 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Environment:</span> 
+        <span class="activity-value">Gym</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Split:</span> 
+        <span class="activity-value">Upper Body</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Description:</span> 
+        <span class="activity-value">Chest, back, shoulders, arms</span>
+      </div>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Pilates</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">30 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Studio</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Guided meditation</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">7</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 10</strong><br>
+          2024-01-23
+        </td>
+        <td class="run-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">32 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Distance:</span> 
+        <span class="activity-value">5.5 km</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Park</span>
+      </div>
+        </td>
+        <td class="strength-col">
+          <span class="empty-cell">No strength training</span>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Rock climbing</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">75 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Indoor gym</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Breathing exercises</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">8.5</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 11</strong><br>
+          2024-01-24
+        </td>
+        <td class="run-col">
+          <span class="empty-cell">No run</span>
+        </td>
+        <td class="strength-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">70 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Environment:</span> 
+        <span class="activity-value">Home</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Split:</span> 
+        <span class="activity-value">Full Body</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Description:</span> 
+        <span class="activity-value">Bodyweight exercises, resistance bands</span>
+      </div>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Dancing</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">40 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Home</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Dance therapy</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">7.5</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 12</strong><br>
+          2024-01-25
+        </td>
+        <td class="run-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">38 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Distance:</span> 
+        <span class="activity-value">6.8 km</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Forest trail</span>
+      </div>
+        </td>
+        <td class="strength-col">
+          <span class="empty-cell">No strength training</span>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Kayaking</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">120 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Lake</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Water meditation</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">9</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 13</strong><br>
+          2024-01-26
+        </td>
+        <td class="run-col">
+          <span class="empty-cell">No run</span>
+        </td>
+        <td class="strength-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">80 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Environment:</span> 
+        <span class="activity-value">Gym</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Split:</span> 
+        <span class="activity-value">Lower Body</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Description:</span> 
+        <span class="activity-value">Heavy squats, deadlifts, leg accessories</span>
+      </div>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Yoga</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">45 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Studio</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Yoga meditation</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">8.5</span>
+        </td>
+      </tr>
+    
+      <tr>
+        <td class="date-col">
+          <strong>Day 14</strong><br>
+          2024-01-27
+        </td>
+        <td class="run-col">
+          <div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">45 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Distance:</span> 
+        <span class="activity-value">8.2 km</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Marathon route</span>
+      </div>
+        </td>
+        <td class="strength-col">
+          <span class="empty-cell">No strength training</span>
+        </td>
+        <td class="activity-col">
+          <div class="activity-row">
+        <span class="activity-label">Type:</span> 
+        <span class="activity-value">Cool down walk</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Duration:</span> 
+        <span class="activity-value">20 min</span>
+      </div><div class="activity-row">
+        <span class="activity-label">Location:</span> 
+        <span class="activity-value">Same route</span>
+      </div>
+        </td>
+        <td class="stress-col">
+          <span class="required-field">Reflection and gratitude</span>
+        </td>
+        <td class="sleep-col">
+          <span class="required-field">8</span>
+        </td>
+      </tr>
+    
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div class="attestation">
+            <h3>Attestation</h3>
+            <div class="attestation-text">
+              I certify that the information provided in this 14-day fitness log is true and accurate to the best of my knowledge. 
+              I understand that providing false information may result in disqualification from the application process. 
+              This log represents my actual physical activity, stress management practices, and sleep patterns during the 
+              specified period from 2024-01-14 to 2024-01-27.
+            </div>
+            <div class="signature-section">
+              <div class="signature-info">
+                <div class="signature-line"></div>
+                <div class="signature-label">Electronic Signature</div>
+                <div style="margin-top: 10px; font-weight: 600;">John Smith</div>
+                <div style="font-size: 10pt; color: #6b7280;">Signed on 2024-01-29</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="completion-info">
+            <div><strong>Log ID:</strong> sample-log-123</div>
+            <div><strong>Generated:</strong> 2025-10-05 at 3:18:17 a.m.</div>
+            <div><strong>Status:</strong> Completed and Signed</div>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  

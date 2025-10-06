@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Calendar, List, Filter, Plus, Clock, MapPin, Users, Star } from 'lucide-react-native';
 import Colors from '@/constants/colors';

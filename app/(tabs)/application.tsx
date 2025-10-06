@@ -71,6 +71,7 @@ export default function ApplicationTab() {
       if (savedInterviewChoice) {
         if (savedInterviewChoice === 'lfi') router.push('/application/lfi-interview' as any);
         else if (savedInterviewChoice === 'eci') router.push('/application/eci-panel-interview' as any);
+        else if (savedInterviewChoice === 'psychological') router.push('/application/psychological-assessment?tab=interview' as any);
         else setShowComingSoon(true);
         return;
       }
@@ -108,7 +109,7 @@ export default function ApplicationTab() {
     router.push(feature.route as any);
   };
 
-  const handleSelectInterview = async (type: 'lfi' | 'eci' | 'indepth') => {
+  const handleSelectInterview = async (type: 'lfi' | 'eci' | 'psychological') => {
     setShowComingSoon(false);
     try {
       if (rememberInterviewChoice) {
@@ -122,9 +123,7 @@ export default function ApplicationTab() {
 
     if (type === 'lfi') router.push('/application/lfi-interview' as any);
     else if (type === 'eci') router.push('/application/eci-panel-interview' as any);
-    else {
-      // Placeholder for future in-depth interview step
-    }
+    else if (type === 'psychological') router.push('/application/psychological-assessment?tab=interview' as any);
   };
 
   const handleSelectTestType = (testType: 'prep' | 'pin') => {
@@ -346,10 +345,10 @@ export default function ApplicationTab() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.modalOption}
-              onPress={() => handleSelectInterview('indepth')}
+              onPress={() => handleSelectInterview('psychological')}
             >
-              <Text style={styles.modalOptionTitle}>In‑Depth Police Interview</Text>
-              <Text style={styles.modalOptionSubtitle}>Coming soon</Text>
+              <Text style={styles.modalOptionTitle}>Psychological Assessment (Interview)</Text>
+              <Text style={styles.modalOptionSubtitle}>Clinical interview preparation and practice</Text>
             </TouchableOpacity>
             
             <View style={styles.modalRememberRow}>
@@ -444,6 +443,17 @@ export default function ApplicationTab() {
             >
               <Text style={styles.modalOptionTitle}>OACP Testing & Certification</Text>
               <Text style={styles.modalOptionSubtitle}>Practice questions, strategies, and full simulations</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => {
+                setShowTestingHubModal(false);
+                router.push('/application/psychological-assessment?tab=written-test' as any);
+              }}
+            >
+              <Text style={styles.modalOptionTitle}>Psychological Assessment (Written)</Text>
+              <Text style={styles.modalOptionSubtitle}>PRI-155 practice test and preparation</Text>
             </TouchableOpacity>
 
             <View style={[styles.modalOption, { opacity: 0.6 }]}

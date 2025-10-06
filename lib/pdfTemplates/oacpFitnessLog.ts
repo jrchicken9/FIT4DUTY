@@ -14,12 +14,26 @@ export interface FitnessLogPDFData {
  * Generate HTML template for OACP Fitness Log PDF
  */
 export function generateOACPFitnessLogHTML(data: FitnessLogPDFData): string {
-  const { log, days, userInfo, exportOptions } = data;
-  
-  const isSigned = log.signed && !exportOptions.includeWatermark;
-  const watermarkClass = exportOptions.includeWatermark ? 'watermark' : '';
-  
-  return `
+  try {
+    const { log, days, userInfo, exportOptions } = data;
+    
+    // Validate required data
+    if (!log || !days || !userInfo) {
+      throw new Error('Missing required data for PDF generation');
+    }
+    
+    if (!log.start_date || !log.end_date) {
+      throw new Error('Log missing start or end date');
+    }
+    
+    if (!userInfo.name || !userInfo.email) {
+      throw new Error('User info missing name or email');
+    }
+    
+    const isSigned = log.signed && !exportOptions.includeWatermark;
+    const watermarkClass = exportOptions.includeWatermark ? 'watermark' : '';
+    
+    return `
     <!DOCTYPE html>
     <html>
     <head>
@@ -39,6 +53,10 @@ export function generateOACPFitnessLogHTML(data: FitnessLogPDFData): string {
     </body>
     </html>
   `;
+  } catch (error) {
+    console.error('Error generating PDF HTML:', error);
+    throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 /**

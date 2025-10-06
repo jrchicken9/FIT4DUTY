@@ -46,7 +46,7 @@ export default function TabLayout() {
             backgroundColor: 'transparent',
             borderBottomColor: Colors.policeRedBorder,
             borderBottomWidth: 1,
-            height: 100, // Standardized header height
+            height: 105, // Adjusted header height for smaller logo
             elevation: 0, // Remove Android elevation
             shadowOpacity: 0, // Remove iOS shadow
             shadowOffset: { width: 0, height: 0 }, // Remove shadow offset

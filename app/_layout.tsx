@@ -168,6 +168,12 @@ function RootLayoutNav() {
       <Stack.Screen name="practice-sessions/[id]" options={getBlueHeaderOptions("Session Details")} />
       <Stack.Screen name="practice-tests" options={getBlueHeaderOptions("Practice Tests")} />
       
+      {/* Fitness Logs - No Header */}
+      <Stack.Screen name="fitness/logs/start" options={{ headerShown: false }} />
+      <Stack.Screen name="fitness/logs/day/[date]" options={{ headerShown: false }} />
+      <Stack.Screen name="fitness/logs/summary" options={{ headerShown: false }} />
+      <Stack.Screen name="fitness/logs/sign" options={{ headerShown: false }} />
+      
       {/* Subscription */}
       <Stack.Screen name="subscription" options={getBlueHeaderOptions("Subscription Plans")} />
       

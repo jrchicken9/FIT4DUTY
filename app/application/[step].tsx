@@ -30,6 +30,7 @@ import PoliceServiceSelectionModal from "@/components/PoliceServiceSelectionModa
 import PREPFitnessTestStep from "@/components/PREPFitnessTestStep";
 import LFIStep from "@/components/LFIStep";
 import ECIStep from "@/components/ECIStep";
+import PsychologicalAssessmentStep from "@/components/PsychologicalAssessmentStep";
 import ProfessionalBackground from "@/components/ProfessionalBackground";
 import applicationSteps from "@/constants/applicationSteps";
 import { useApplication } from "@/context/ApplicationContext";
@@ -61,8 +62,9 @@ export default function ApplicationStepDetailScreen() {
     '5': 'prep-fitness-test',
     '6': 'lfi-interview',
     '7': 'eci-panel-interview',
-    '8': 'background-check',
-    '9': 'final-steps',
+    '8': 'psychological-assessment',
+    '9': 'background-check',
+    '10': 'final-steps',
     'lfi': 'lfi-interview', // Handle special LFI route alias
   };
   const resolvedStepId = numericToIdMap[stepParam!] || stepParam || '';
@@ -147,6 +149,10 @@ export default function ApplicationStepDetailScreen() {
 
   if (resolvedStepId === 'eci-panel-interview') {
     return <ECIStep />;
+  }
+
+  if (resolvedStepId === 'psychological-assessment') {
+    return <PsychologicalAssessmentStep />;
   }
 
   const handleSaveNotes = () => {

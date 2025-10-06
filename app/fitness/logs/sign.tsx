@@ -1,201 +1,90 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  TextInput,
   TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  TextInput,
   Alert,
-  Dimensions,
-  Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
-import {
-  ArrowLeft,
-  PenTool,
-  CheckCircle2,
-  AlertTriangle,
-  Trash2,
-  Save,
-  Download,
-} from 'lucide-react-native';
+import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ArrowLeft, CheckCircle, FileText } from 'lucide-react-native';
+import { format } from 'date-fns';
+
 import Colors from '@/constants/colors';
 import { typography, spacing, borderRadius, shadows } from '@/constants/designSystem';
 import { fitnessLogService } from '@/lib/fitnessLogService';
-import { cancelFitnessLogNotifications } from '@/lib/notificationHelpers';
-import type { FitnessLog, FitnessLogProgress } from '@/types/fitness-log';
-import Button from '@/components/Button';
-import ProfessionalBackground from '@/components/ProfessionalBackground';
-
-const { width: screenWidth } = Dimensions.get('window');
-
-interface SignaturePoint {
-  x: number;
-  y: number;
-}
+import { FitnessLog } from '@/types/fitness-log';
 
 export default function SignFitnessLogScreen() {
-  const router = useRouter();
+  const { logId } = useLocalSearchParams<{ logId: string }>();
+  const [log, setLog] = useState<FitnessLog | null>(null);
   const [loading, setLoading] = useState(true);
   const [signing, setSigning] = useState(false);
-  const [activeLog, setActiveLog] = useState<FitnessLog | null>(null);
-  const [progress, setProgress] = useState<FitnessLogProgress | null>(null);
-  
-  // Signature state
-  const [signature, setSignature] = useState<SignaturePoint[]>([]);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [signedName, setSignedName] = useState('');
-  const [attestationChecked, setAttestationChecked] = useState(false);
-  
-  // Signature canvas dimensions
-  const signatureHeight = 150;
+  const [agreementChecked, setAgreementChecked] = useState(false);
 
-  const loadLogData = async () => {
+  useEffect(() => {
+    if (logId) {
+      loadLog();
+    }
+  }, [logId]);
+
+  const loadLog = async () => {
+    if (!logId) return;
+    
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      const log = await fitnessLogService.getActiveLog();
-      if (!log) {
-        Alert.alert('Error', 'No active fitness log found');
-        router.back();
-        return;
-      }
-
-      setActiveLog(log);
-      
-      const logProgress = await fitnessLogService.getLogProgress(log.id);
-      setProgress(logProgress);
-      
-      if (!logProgress?.isComplete) {
-        Alert.alert(
-          'Incomplete Log',
-          'All 14 days must be completed before you can sign the log.',
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
-        return;
+      const logData = await fitnessLogService.getLog(logId);
+      setLog(logData);
+      if (logData?.signed_name) {
+        setSignedName(logData.signed_name);
       }
     } catch (error) {
-      console.error('Error loading log data:', error);
-      Alert.alert('Error', 'Failed to load fitness log data');
+      console.error('Error loading log:', error);
+      Alert.alert('Error', 'Failed to load fitness log.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadLogData();
-  }, []);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-CA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  const handleTouchStart = (event: any) => {
-    const { locationX, locationY } = event.nativeEvent;
-    setIsDrawing(true);
-    setSignature([{ x: locationX, y: locationY }]);
-  };
-
-  const handleTouchMove = (event: any) => {
-    if (!isDrawing) return;
-    
-    const { locationX, locationY } = event.nativeEvent;
-    setSignature(prev => [...prev, { x: locationX, y: locationY }]);
-  };
-
-  const handleTouchEnd = () => {
-    setIsDrawing(false);
-  };
-
-  const clearSignature = () => {
-    setSignature([]);
-  };
-
-  const generateSignaturePath = () => {
-    if (signature.length < 2) return '';
-    
-    let path = `M${signature[0].x},${signature[0].y}`;
-    
-    for (let i = 1; i < signature.length; i++) {
-      path += ` L${signature[i].x},${signature[i].y}`;
-    }
-    
-    return path;
-  };
-
-  const convertSignatureToBase64 = async (): Promise<string | null> => {
-    if (signature.length < 2) return null;
-    
-    try {
-      // In a real implementation, you would use a library like react-native-signature-canvas
-      // or react-native-svg-to-png to convert the SVG signature to base64
-      // For now, we'll return a placeholder
-      return 'data:image/svg+xml;base64,' + btoa(`
-        <svg width="${screenWidth - 40}" height="150" xmlns="http://www.w3.org/2000/svg">
-          <path d="${generateSignaturePath()}" stroke="#000" stroke-width="2" fill="none"/>
-        </svg>
-      `);
-    } catch (error) {
-      console.error('Error converting signature to base64:', error);
-      return null;
-    }
-  };
-
   const handleSignLog = async () => {
+    if (!log || !logId) return;
+
     if (!signedName.trim()) {
-      Alert.alert('Error', 'Please enter your full name');
+      Alert.alert('Missing Information', 'Please enter your full name.');
       return;
     }
-    
-    if (!attestationChecked) {
-      Alert.alert('Error', 'Please confirm the attestation statement');
+
+    if (!agreementChecked) {
+      Alert.alert('Agreement Required', 'Please check the certification agreement.');
       return;
     }
-    
-    if (signature.length < 2) {
-      Alert.alert('Error', 'Please provide your signature');
-      return;
-    }
-    
+
+    setSigning(true);
     try {
-      setSigning(true);
+      // For now, we'll use a placeholder signature
+      // In a real implementation, you'd use a signature capture component
+      const signatureBlob = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
       
-      const signatureBlob = await convertSignatureToBase64();
-      
-      if (!activeLog) {
-        Alert.alert('Error', 'No active log found');
-        return;
-      }
-      
-      await fitnessLogService.signLog(activeLog.id, signedName.trim(), signatureBlob);
-      
-      // Cancel notifications since log is complete
-      try {
-        await cancelFitnessLogNotifications(activeLog.id);
-      } catch (error) {
-        console.warn('Failed to cancel notifications:', error);
-      }
-      
+      await fitnessLogService.signLog(logId, signedName.trim(), signatureBlob);
+
       Alert.alert(
-        'Log Signed Successfully!',
-        'Your fitness log has been signed and completed. You can now export the final PDF.',
+        'Success!',
+        'Your fitness log has been signed and completed. You can now generate the official PDF.',
         [
           {
-            text: 'View Summary',
-            onPress: () => router.replace('/fitness/logs/summary')
+            text: 'OK',
+            onPress: () => router.replace('/(tabs)/fitness')
           }
         ]
       );
     } catch (error) {
       console.error('Error signing log:', error);
-      Alert.alert('Error', 'Failed to sign the log. Please try again.');
+      Alert.alert('Error', 'Failed to sign fitness log. Please try again.');
     } finally {
       setSigning(false);
     }
@@ -203,45 +92,37 @@ export default function SignFitnessLogScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ProfessionalBackground variant="fitness">
-          <View />
-        </ProfessionalBackground>
+      <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading signature screen...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  if (!activeLog || !progress) {
+  if (!log) {
     return (
-      <View style={styles.container}>
-        <ProfessionalBackground variant="fitness">
-          <View />
-        </ProfessionalBackground>
+      <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Failed to load log data</Text>
-          <Button
-            title="Go Back"
+          <Text style={styles.errorText}>Fitness log not found</Text>
+          <TouchableOpacity 
+            style={styles.backButton}
             onPress={() => router.back()}
-            variant="primary"
-          />
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ProfessionalBackground variant="fitness">
-        <View />
-      </ProfessionalBackground>
-      
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        <LinearGradient
+        colors={['#3B82F6', '#1E40AF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -249,172 +130,127 @@ export default function SignFitnessLogScreen() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <ArrowLeft size={24} color={Colors.text} />
+            <ArrowLeft size={24} color={Colors.white} />
           </TouchableOpacity>
-          
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Sign Fitness Log</Text>
-            <Text style={styles.headerSubtitle}>Complete your 14-day log</Text>
-          </View>
+          <Text style={styles.headerTitle}>Sign & Complete</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
-        {/* Log Summary */}
-        <View style={styles.summarySection}>
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryHeader}>
-              <Text style={styles.summaryTitle}>Ready to Sign</Text>
-              <View style={styles.completeBadge}>
-                <CheckCircle2 size={16} color={Colors.success} />
-                <Text style={styles.completeBadgeText}>All Days Complete</Text>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Log Summary */}
+          <View style={styles.summarySection}>
+            <Text style={styles.sectionTitle}>Log Summary</Text>
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Start Date</Text>
+                <Text style={styles.summaryValue}>{format(new Date(log.start_date), 'MMM dd, yyyy')}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>End Date</Text>
+                <Text style={styles.summaryValue}>{format(new Date(log.end_date), 'MMM dd, yyyy')}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Status</Text>
+                <Text style={styles.summaryValue}>Ready for Signature</Text>
               </View>
             </View>
-            
-            <View style={styles.summaryContent}>
-              <Text style={styles.summaryText}>
-                <Text style={styles.summaryBold}>Log Period:</Text> {formatDate(progress.startDate)} - {formatDate(progress.endDate)}
-              </Text>
-              <Text style={styles.summaryText}>
-                <Text style={styles.summaryBold}>Days Completed:</Text> {progress.completedDays}/{progress.totalDays}
-              </Text>
-              <Text style={styles.summaryText}>
-                <Text style={styles.summaryBold}>Status:</Text> Ready for signature
-              </Text>
-            </View>
           </View>
-        </View>
 
-        {/* Attestation Statement */}
-        <View style={styles.attestationSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Attestation Statement</Text>
-          </View>
-          
-          <View style={styles.attestationCard}>
-            <Text style={styles.attestationText}>
-              I certify that the information provided in this 14-day fitness log is true and accurate to the best of my knowledge. 
-              I understand that providing false information may result in disqualification from the application process. 
-              This log represents my actual physical activity, stress management practices, and sleep patterns during the 
-              specified period from {formatDate(progress.startDate)} to {formatDate(progress.endDate)}.
-            </Text>
-            
-            <TouchableOpacity
-              style={styles.checkboxContainer}
-              onPress={() => setAttestationChecked(!attestationChecked)}
-            >
-              <View style={[
-                styles.checkbox,
-                attestationChecked && styles.checkboxChecked
-              ]}>
-                {attestationChecked && (
-                  <CheckCircle2 size={16} color={Colors.white} />
-                )}
+          {/* Signature Section */}
+          <View style={styles.signatureSection}>
+            <Text style={styles.sectionTitle}>Digital Signature</Text>
+            <View style={styles.signatureCard}>
+              <View style={styles.signaturePlaceholder}>
+                <FileText size={48} color={Colors.white + '60'} />
+                <Text style={styles.signaturePlaceholderText}>
+                  Digital signature will be captured here
+                </Text>
+                <Text style={styles.signatureNote}>
+                  (Signature capture component would be implemented here)
+                </Text>
               </View>
-              <Text style={styles.checkboxLabel}>
-                I have read and agree to the attestation statement above
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Signature Section */}
-        <View style={styles.signatureSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Electronic Signature</Text>
-          </View>
-          
-          <View style={styles.signatureCard}>
-            {/* Signature Canvas */}
-            <View style={styles.signatureCanvas}>
-              <View
-                style={styles.signatureArea}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                {signature.length > 0 && (
-                  <Svg width={screenWidth - 40} height={150}>
-                    <Path
-                      d={generateSignaturePath()}
-                      stroke={Colors.text}
-                      strokeWidth="2"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                )}
-                
-                {signature.length === 0 && (
-                  <View style={styles.signaturePlaceholder}>
-                    <PenTool size={32} color={Colors.textSecondary} />
-                    <Text style={styles.signaturePlaceholderText}>
-                      Sign above with your finger or stylus
-                    </Text>
-                  </View>
-                )}
-              </View>
-              
-              <TouchableOpacity
-                style={styles.clearSignatureButton}
-                onPress={clearSignature}
-              >
-                <Trash2 size={16} color={Colors.error} />
-                <Text style={styles.clearSignatureText}>Clear</Text>
-              </TouchableOpacity>
             </View>
-            
-            {/* Name Input */}
-            <View style={styles.nameInputContainer}>
-              <Text style={styles.nameInputLabel}>Full Name (as it appears on official documents)</Text>
+          </View>
+
+          {/* Name Input */}
+          <View style={styles.nameSection}>
+            <Text style={styles.sectionTitle}>Printed Name</Text>
+            <View style={styles.inputGroup}>
               <TextInput
                 style={styles.nameInput}
                 value={signedName}
                 onChangeText={setSignedName}
-                placeholder="Enter your full name"
+                placeholder="Enter your full name as it appears on official documents"
+                placeholderTextColor={Colors.white + '60'}
                 autoCapitalize="words"
-                autoCorrect={false}
               />
             </View>
           </View>
-        </View>
 
-        {/* Important Notice */}
-        <View style={styles.noticeSection}>
-          <View style={styles.noticeCard}>
-            <AlertTriangle size={24} color={Colors.warning} />
-            <View style={styles.noticeContent}>
-              <Text style={styles.noticeTitle}>Important Notice</Text>
-              <Text style={styles.noticeText}>
-                Once you sign this log, it cannot be edited or modified. 
-                Please review all entries carefully before signing.
-              </Text>
+          {/* Agreement */}
+          <View style={styles.agreementSection}>
+            <Text style={styles.sectionTitle}>Certification</Text>
+            <View style={styles.agreementCard}>
+              <TouchableOpacity 
+                style={styles.checkboxContainer}
+                onPress={() => setAgreementChecked(!agreementChecked)}
+              >
+                <View style={[styles.checkbox, agreementChecked && styles.checkboxChecked]}>
+                  {agreementChecked && <CheckCircle size={16} color={Colors.white} />}
+                </View>
+                <Text style={styles.agreementText}>
+                  I certify that the information provided in this 14-day fitness log is true and accurate to the best of my knowledge. I understand that providing false information may result in disqualification from the OACP application process.
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </ScrollView>
 
-      {/* Action Buttons */}
-      <View style={styles.actionSection}>
-        <View style={styles.actionButtons}>
-          <Button
-            title="Cancel"
-            onPress={() => router.back()}
-            variant="outline"
-            style={styles.actionButton}
-          />
-          
-          <Button
-            title="Sign & Complete Log"
+          {/* Important Notes */}
+          <View style={styles.notesSection}>
+            <Text style={styles.sectionTitle}>Important Notes</Text>
+            <View style={styles.notesCard}>
+              <View style={styles.noteItem}>
+                <CheckCircle size={16} color={Colors.white} />
+                <Text style={styles.noteText}>
+                  Once signed, this log cannot be modified
+                </Text>
+              </View>
+              <View style={styles.noteItem}>
+                <CheckCircle size={16} color={Colors.white} />
+                <Text style={styles.noteText}>
+                  You can generate the official PDF after signing
+                </Text>
+              </View>
+              <View style={styles.noteItem}>
+                <CheckCircle size={16} color={Colors.white} />
+                <Text style={styles.noteText}>
+                  Keep a copy of the PDF for your records
+                </Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Action Button */}
+        <View style={styles.actionSection}>
+          <TouchableOpacity 
+            style={[styles.signButton, (!signedName.trim() || !agreementChecked || signing) && styles.signButtonDisabled]}
             onPress={handleSignLog}
-            variant="gradient"
-            loading={signing}
-            disabled={signing || !signedName.trim() || !attestationChecked || signature.length < 2}
-            icon={<CheckCircle2 size={16} color={Colors.white} />}
-            iconPosition="left"
-            style={styles.actionButton}
-          />
+            disabled={!signedName.trim() || !agreementChecked || signing}
+          >
+            <LinearGradient
+              colors={(!signedName.trim() || !agreementChecked || signing) ? ['#9CA3AF', '#6B7280'] : ['#10B981', '#059669']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.signButtonGradient}
+            >
+              <Text style={styles.signButtonText}>
+                {signing ? 'Signing...' : 'Sign & Complete Log'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
     </View>
   );
 }
@@ -423,14 +259,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
+  gradient: {
     flex: 1,
   },
-  content: {
-    paddingBottom: 120,
-  },
-  
-  // Loading
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -438,280 +269,200 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...typography.bodyLarge,
-    color: Colors.textSecondary,
+    color: Colors.white,
   },
-  
-  // Error
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    gap: 20,
+    paddingHorizontal: spacing.lg,
   },
   errorText: {
-    ...typography.bodyLarge,
-    color: Colors.error,
+    ...typography.headingMedium,
+    color: Colors.white,
     textAlign: 'center',
+    marginBottom: spacing.lg,
   },
-  
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingTop: 60, // Increased to account for status bar since we removed the navigation header
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white + '20',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
-  },
-  headerContent: {
-    flex: 1,
   },
   headerTitle: {
-    fontSize: 24,
+    ...typography.headingMedium,
+    color: Colors.white,
     fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 2,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+  headerSpacer: {
+    width: 40,
   },
-  
-  // Summary Section
+  content: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  sectionTitle: {
+    ...typography.headingSmall,
+    color: Colors.white,
+    fontWeight: '600',
+    marginBottom: spacing.md,
+  },
   summarySection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   summaryCard: {
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.xl,
-    padding: 20,
-    ...shadows.medium,
+    backgroundColor: Colors.white + '15',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.white + '20',
   },
-  summaryHeader: {
+  summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.sm,
   },
-  summaryTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
+  summaryLabel: {
+    ...typography.bodyMedium,
+    color: Colors.white + 'CC',
   },
-  completeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.success + '15',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: borderRadius.full,
-    gap: 6,
-  },
-  completeBadgeText: {
-    fontSize: 12,
+  summaryValue: {
+    ...typography.bodyMedium,
+    color: Colors.white,
     fontWeight: '600',
-    color: Colors.success,
   },
-  summaryContent: {
-    gap: 8,
+  signatureSection: {
+    marginBottom: spacing.xl,
   },
-  summaryText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  summaryBold: {
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  
-  // Section Headers
-  sectionHeader: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  
-  // Attestation Section
-  attestationSection: {
-    marginBottom: 24,
-  },
-  attestationCard: {
-    backgroundColor: Colors.white,
-    marginHorizontal: 20,
-    borderRadius: borderRadius.xl,
-    padding: 20,
-    ...shadows.medium,
+  signatureCard: {
+    backgroundColor: Colors.white + '15',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.white + '20',
   },
-  attestationText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: 20,
+  signaturePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+  },
+  signaturePlaceholderText: {
+    ...typography.bodyMedium,
+    color: Colors.white + 'CC',
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  signatureNote: {
+    ...typography.bodySmall,
+    color: Colors.white + '80',
+    marginTop: spacing.sm,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  nameSection: {
+    marginBottom: spacing.xl,
+  },
+  inputGroup: {
+    marginBottom: spacing.md,
+  },
+  nameInput: {
+    backgroundColor: Colors.white + '15',
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.white + '20',
+    ...typography.bodyMedium,
+    color: Colors.white,
+  },
+  agreementSection: {
+    marginBottom: spacing.xl,
+  },
+  agreementCard: {
+    backgroundColor: Colors.white + '15',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.white + '20',
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: spacing.md,
   },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: Colors.border,
+    borderColor: Colors.white + '60',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
   checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: Colors.success,
+    borderColor: Colors.success,
   },
-  checkboxLabel: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.text,
+  agreementText: {
+    ...typography.bodySmall,
+    color: Colors.white + 'CC',
     lineHeight: 20,
-    fontWeight: '500',
+    flex: 1,
   },
-  
-  // Signature Section
-  signatureSection: {
-    marginBottom: 24,
+  notesSection: {
+    marginBottom: spacing.xl,
   },
-  signatureCard: {
-    backgroundColor: Colors.white,
-    marginHorizontal: 20,
-    borderRadius: borderRadius.xl,
-    padding: 20,
-    ...shadows.medium,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  signatureCanvas: {
-    marginBottom: 20,
-  },
-  signatureArea: {
-    width: screenWidth - 40,
-    height: 150,
-    backgroundColor: Colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  signaturePlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  signaturePlaceholderText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  clearSignatureButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-end',
-    gap: 6,
-  },
-  clearSignatureText: {
-    fontSize: 14,
-    color: Colors.error,
-    fontWeight: '500',
-  },
-  nameInputContainer: {
-    gap: 8,
-  },
-  nameInputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  nameInput: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: borderRadius.md,
-    padding: 12,
-    fontSize: 16,
-    color: Colors.text,
-  },
-  
-  // Notice Section
-  noticeSection: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  noticeCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.warning + '10',
+  notesCard: {
+    backgroundColor: Colors.white + '15',
     borderRadius: borderRadius.lg,
-    padding: 16,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.warning + '30',
-    gap: 12,
+    borderColor: Colors.white + '20',
   },
-  noticeContent: {
+  noteItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  noteText: {
+    ...typography.bodySmall,
+    color: Colors.white + 'CC',
     flex: 1,
-  },
-  noticeTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.warning,
-    marginBottom: 4,
-  },
-  noticeText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
     lineHeight: 20,
   },
-  
-  // Action Section
   actionSection: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+    paddingTop: spacing.md,
   },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
+  signButton: {
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    ...shadows.large,
   },
-  actionButton: {
-    flex: 1,
+  signButtonDisabled: {
+    opacity: 0.7,
+  },
+  signButtonGradient: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  signButtonText: {
+    ...typography.labelLarge,
+    color: Colors.white,
+    fontWeight: '700',
   },
 });

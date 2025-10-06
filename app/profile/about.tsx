@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Shield, Target, Users, GraduationCap, ArrowLeft } from "lucide-react-native";
 import { BRAND } from "@/app/constants/branding";
 import Colors from "@/constants/colors";

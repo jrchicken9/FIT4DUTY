@@ -3,450 +3,247 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
   Alert,
-  Share,
-  Platform,
+  ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import {
-  ArrowLeft,
-  Download,
-  Eye,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  FileText,
-  Calendar,
-  Clock,
-  Dumbbell,
-  Footprints,
-  Brain,
-  BedDouble,
-  Activity,
-  PenTool,
-  Share as ShareIcon,
-} from 'lucide-react-native';
+import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ArrowLeft, CheckCircle, XCircle, Calendar, FileText, RotateCcw } from 'lucide-react-native';
+import { format, addDays } from 'date-fns';
+
 import Colors from '@/constants/colors';
 import { typography, spacing, borderRadius, shadows } from '@/constants/designSystem';
 import { fitnessLogService } from '@/lib/fitnessLogService';
-import { generateOACPFitnessLogHTML, generateLogSummary } from '@/lib/pdfTemplates/oacpFitnessLog';
-import type { FitnessLog, FitnessLogDay, FitnessLogProgress } from '@/types/fitness-log';
-import Button from '@/components/Button';
-import ProfessionalBackground from '@/components/ProfessionalBackground';
+import { FitnessLog, FitnessLogDay } from '@/types/fitness-log';
+import { createConsistentDate, getTargetDateForEntry, isToday, formatDateISO } from '@/lib/dateUtils';
 
 export default function FitnessLogSummaryScreen() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
-  const [activeLog, setActiveLog] = useState<FitnessLog | null>(null);
+  const { logId } = useLocalSearchParams<{ logId: string }>();
+  const [log, setLog] = useState<FitnessLog | null>(null);
   const [days, setDays] = useState<FitnessLogDay[]>([]);
-  const [progress, setProgress] = useState<FitnessLogProgress | null>(null);
-  const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (logId) {
+      loadLogData();
+    }
+  }, [logId]);
 
   const loadLogData = async () => {
+    if (!logId) return;
+    
+    setLoading(true);
     try {
-      setLoading(true);
+      const [logData, daysData] = await Promise.all([
+        fitnessLogService.getLog(logId),
+        fitnessLogService.getDays(logId)
+      ]);
       
-      const log = await fitnessLogService.getActiveLog();
-      if (!log) {
-        Alert.alert('Error', 'No active fitness log found');
-        router.back();
-        return;
-      }
-
-      setActiveLog(log);
-      
-      const logDays = await fitnessLogService.getDays(log.id);
-      setDays(logDays);
-      
-      const logProgress = await fitnessLogService.getLogProgress(log.id);
-      setProgress(logProgress);
-      
-      const logSummary = generateLogSummary(logDays);
-      setSummary(logSummary);
+      setLog(logData);
+      setDays(daysData);
     } catch (error) {
       console.error('Error loading log data:', error);
-      Alert.alert('Error', 'Failed to load fitness log data');
+      Alert.alert('Error', 'Failed to load fitness log data.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadLogData();
-  }, []);
+  const handleResetLog = async () => {
+    if (!log) return;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-CA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  const getDayStatus = (day: FitnessLogDay) => {
-    if (day.is_complete) {
-      return { status: 'complete', icon: CheckCircle2, color: Colors.success };
-    } else if (day.stress_method && day.sleep_hours !== null && day.sleep_hours !== undefined) {
-      return { status: 'partial', icon: AlertTriangle, color: Colors.warning };
-    } else {
-      return { status: 'incomplete', icon: XCircle, color: Colors.error };
-    }
-  };
-
-  const handlePreviewPDF = async () => {
-    if (!activeLog || !summary) return;
-    
-    try {
-      setExporting(true);
-      
-      const userInfo = {
-        name: 'User Name', // This should come from user profile
-        email: 'user@example.com', // This should come from user profile
-      };
-      
-      const html = generateOACPFitnessLogHTML({
-        log: activeLog,
-        days,
-        userInfo,
-        exportOptions: {
-          includeSignature: false,
-          includeWatermark: true,
-          format: 'pdf'
+    Alert.alert(
+      'Reset Fitness Log',
+      'Are you sure you want to reset this fitness log? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await fitnessLogService.deleteLog(log.id);
+              Alert.alert('Success', 'Fitness log has been reset.');
+              router.replace('/(tabs)/fitness');
+            } catch (error) {
+              console.error('Error resetting log:', error);
+              Alert.alert('Error', 'Failed to reset fitness log.');
+            }
+          }
         }
-      });
-      
-      // For now, just show an alert. In a real app, you'd generate and show the PDF
-      Alert.alert(
-        'PDF Preview',
-        'PDF preview functionality would be implemented here. The HTML template is ready for PDF generation.',
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      console.error('Error generating PDF preview:', error);
-      Alert.alert('Error', 'Failed to generate PDF preview');
-    } finally {
-      setExporting(false);
-    }
+      ]
+    );
   };
 
-  const handleExportPDF = async () => {
-    if (!activeLog || !summary) return;
-    
-    if (!progress?.isComplete) {
-      Alert.alert(
-        'Incomplete Log',
-        'All 14 days must be completed before you can export the final PDF.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-    
-    try {
-      setExporting(true);
-      
-      const userInfo = {
-        name: 'User Name', // This should come from user profile
-        email: 'user@example.com', // This should come from user profile
-      };
-      
-      const html = generateOACPFitnessLogHTML({
-        log: activeLog,
-        days,
-        userInfo,
-        exportOptions: {
-          includeSignature: activeLog.signed,
-          includeWatermark: !activeLog.signed,
-          format: 'pdf'
-        }
-      });
-      
-      // For now, just show an alert. In a real app, you'd generate and save the PDF
-      Alert.alert(
-        'Export PDF',
-        'PDF export functionality would be implemented here. The HTML template is ready for PDF generation.',
-        [{ text: 'OK' }]
-      );
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      Alert.alert('Error', 'Failed to export PDF');
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleFinishAndSign = () => {
-    if (!progress?.isComplete) {
-      Alert.alert(
-        'Incomplete Log',
-        'All 14 days must be completed before you can sign the log.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-    
-    router.push('/fitness/logs/sign');
-  };
-
-  const handleShare = async () => {
-    try {
-      if (Platform.OS === 'ios') {
-        await Share.share({
-          message: `I've completed my 14-day OACP fitness log! ${progress?.completedDays}/14 days completed.`,
-          url: '', // Add app URL if available
-        });
-      } else {
-        await Share.share({
-          message: `I've completed my 14-day OACP fitness log! ${progress?.completedDays}/14 days completed.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
-  };
+  const daysCompleted = days.filter(day => day.is_complete).length;
+  const completionPercentage = Math.round((daysCompleted / 14) * 100);
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ProfessionalBackground variant="fitness">
-          <View />
-        </ProfessionalBackground>
+      <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading summary...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
-  if (!activeLog || !progress || !summary) {
+  if (!log) {
     return (
-      <View style={styles.container}>
-        <ProfessionalBackground variant="fitness">
-          <View />
-        </ProfessionalBackground>
+      <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Failed to load log data</Text>
-          <Button
-            title="Go Back"
+          <Text style={styles.errorText}>Fitness log not found</Text>
+          <TouchableOpacity 
+            style={styles.backButton}
             onPress={() => router.back()}
-            variant="primary"
-          />
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ProfessionalBackground variant="fitness">
-        <View />
-      </ProfessionalBackground>
-      
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+        <LinearGradient
+        colors={['#3B82F6', '#1E40AF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
       >
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity 
-            style={styles.backButton}
+            style={styles.headerBackButton}
             onPress={() => router.back()}
           >
-            <ArrowLeft size={24} color={Colors.text} />
+            <ArrowLeft size={24} color={Colors.white} />
           </TouchableOpacity>
-          
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Log Summary</Text>
-            <Text style={styles.headerSubtitle}>14-Day Fitness Log Overview</Text>
-          </View>
-          
+          <Text style={styles.headerTitle}>Fitness Log Summary</Text>
           <TouchableOpacity 
-            style={styles.shareButton}
-            onPress={handleShare}
+            style={styles.headerResetButton}
+            onPress={handleResetLog}
           >
-            <ShareIcon size={20} color={Colors.primary} />
+            <RotateCcw size={20} color={Colors.white} />
           </TouchableOpacity>
         </View>
 
-        {/* Status Overview */}
-        <View style={styles.statusSection}>
-          <View style={styles.statusCard}>
-            <View style={styles.statusHeader}>
-              <Text style={styles.statusTitle}>Log Status</Text>
-              <View style={[
-                styles.statusBadge,
-                progress.isComplete ? styles.statusBadgeComplete : styles.statusBadgeInProgress
-              ]}>
-                <Text style={[
-                  styles.statusBadgeText,
-                  progress.isComplete ? styles.statusBadgeTextComplete : styles.statusBadgeTextInProgress
-                ]}>
-                  {progress.isComplete ? 'Complete' : 'In Progress'}
-                </Text>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Log Overview */}
+          <View style={styles.overviewSection}>
+            <Text style={styles.sectionTitle}>Log Overview</Text>
+            <View style={styles.overviewCard}>
+              <View style={styles.overviewRow}>
+                <Text style={styles.overviewLabel}>Start Date</Text>
+                <Text style={styles.overviewValue}>{format(new Date(log.start_date + 'T00:00:00'), 'MMM dd, yyyy')}</Text>
               </View>
-            </View>
-            
-            <View style={styles.statusStats}>
-              <View style={styles.statusStat}>
-                <Text style={styles.statusStatValue}>{progress.completedDays}</Text>
-                <Text style={styles.statusStatLabel}>Days Completed</Text>
+              <View style={styles.overviewRow}>
+                <Text style={styles.overviewLabel}>End Date</Text>
+                <Text style={styles.overviewValue}>{format(new Date(log.end_date + 'T00:00:00'), 'MMM dd, yyyy')}</Text>
               </View>
-              <View style={styles.statusStat}>
-                <Text style={styles.statusStatValue}>{progress.totalDays - progress.completedDays}</Text>
-                <Text style={styles.statusStatLabel}>Days Remaining</Text>
+              <View style={styles.overviewRow}>
+                <Text style={styles.overviewLabel}>Status</Text>
+                <Text style={styles.overviewValue}>{log.status === 'completed' ? 'Completed' : 'In Progress'}</Text>
               </View>
-              <View style={styles.statusStat}>
-                <Text style={styles.statusStatValue}>
-                  {Math.round((progress.completedDays / progress.totalDays) * 100)}%
-                </Text>
-                <Text style={styles.statusStatLabel}>Progress</Text>
+              <View style={styles.overviewRow}>
+                <Text style={styles.overviewLabel}>Signed</Text>
+                <Text style={styles.overviewValue}>{log.signed ? 'Yes' : 'No'}</Text>
               </View>
             </View>
           </View>
-        </View>
 
-        {/* Summary Statistics */}
-        <View style={styles.summarySection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>14-Day Summary</Text>
-          </View>
-          
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryCard}>
-              <Footprints size={24} color={Colors.success} />
-              <Text style={styles.summaryValue}>{summary.totalRunMinutes}</Text>
-              <Text style={styles.summaryLabel}>Total Run Minutes</Text>
-            </View>
-            
-            <View style={styles.summaryCard}>
-              <Dumbbell size={24} color={Colors.success} />
-              <Text style={styles.summaryValue}>{summary.totalStrengthMinutes}</Text>
-              <Text style={styles.summaryLabel}>Strength Minutes</Text>
-            </View>
-            
-            <View style={styles.summaryCard}>
-              <Activity size={24} color={Colors.success} />
-              <Text style={styles.summaryValue}>{summary.totalOtherActivityMinutes}</Text>
-              <Text style={styles.summaryLabel}>Other Activity Minutes</Text>
-            </View>
-            
-            <View style={styles.summaryCard}>
-              <BedDouble size={24} color={Colors.success} />
-              <Text style={styles.summaryValue}>{summary.averageSleepHours.toFixed(1)}</Text>
-              <Text style={styles.summaryLabel}>Avg Sleep Hours</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Daily Progress Grid */}
-        <View style={styles.progressSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Daily Progress</Text>
-            <Text style={styles.sectionSubtitle}>
-              {formatDate(progress.startDate)} - {formatDate(progress.endDate)}
-            </Text>
-          </View>
-          
-          <View style={styles.progressGrid}>
-            {days.map((day, index) => {
-              const dayStatus = getDayStatus(day);
-              const StatusIcon = dayStatus.icon;
-              const dayNumber = index + 1;
-              
-              return (
-                <TouchableOpacity
-                  key={day.id}
+          {/* Progress Section */}
+          <View style={styles.progressSection}>
+            <Text style={styles.sectionTitle}>Progress</Text>
+            <View style={styles.progressCard}>
+              <View style={styles.progressBar}>
+                <View 
                   style={[
-                    styles.progressDay,
-                    dayStatus.status === 'complete' && styles.progressDayComplete,
-                    dayStatus.status === 'partial' && styles.progressDayPartial,
-                  ]}
-                  onPress={() => router.push(`/fitness/logs/day/${day.day_date}`)}
-                >
-                  <Text style={styles.progressDayNumber}>Day {dayNumber}</Text>
-                  <StatusIcon size={20} color={dayStatus.color} />
-                  <Text style={styles.progressDayDate}>
-                    {new Date(day.day_date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Missing Fields Warning */}
-        {!progress.isComplete && (
-          <View style={styles.warningSection}>
-            <View style={styles.warningCard}>
-              <AlertTriangle size={24} color={Colors.warning} />
-              <View style={styles.warningContent}>
-                <Text style={styles.warningTitle}>Complete All Days</Text>
-                <Text style={styles.warningText}>
-                  All 14 days must be completed before you can sign and export the final log.
-                </Text>
+                    styles.progressFill,
+                    { width: `${completionPercentage}%` }
+                  ]} 
+                />
               </View>
+              <Text style={styles.progressText}>
+                {daysCompleted} of 14 days completed ({completionPercentage}%)
+              </Text>
             </View>
           </View>
-        )}
 
-        {/* Export Options */}
-        <View style={styles.exportSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Export Options</Text>
-          </View>
-          
-          <View style={styles.exportOptions}>
-            <Button
-              title="Preview PDF (Draft)"
-              onPress={handlePreviewPDF}
-              variant="outline"
-              loading={exporting}
-              disabled={exporting}
-              icon={<Eye size={16} color={Colors.primary} />}
-              iconPosition="left"
-              fullWidth
-            />
-            
-            {progress.isComplete ? (
-              <>
-                <Button
-                  title="Export Final PDF"
-                  onPress={handleExportPDF}
-                  variant="primary"
-                  loading={exporting}
-                  disabled={exporting}
-                  icon={<Download size={16} color={Colors.white} />}
-                  iconPosition="left"
-                  fullWidth
-                />
+          {/* Daily Progress Grid */}
+          <View style={styles.dailyProgressSection}>
+            <Text style={styles.sectionTitle}>Daily Progress</Text>
+            <View style={styles.dailyGrid}>
+              {Array.from({ length: 14 }, (_, index) => {
+                // Use the same date calculation as the start screen for consistency
+                const startDateObj = new Date(log.start_date + 'T00:00:00');
+                const dayDate = addDays(startDateObj, index);
+                const dayNumber = index + 1;
+                const dayDateString = format(dayDate, 'yyyy-MM-dd');
+                const dayEntry = days.find(day => day.day_date === dayDateString);
+                const isCompleted = dayEntry?.is_complete || false;
+                const isTodayDate = isToday(dayDateString);
                 
-                {!activeLog.signed && (
-                  <Button
-                    title="Finish & Sign Log"
-                    onPress={handleFinishAndSign}
-                    variant="gradient"
-                    icon={<PenTool size={16} color={Colors.white} />}
-                    iconPosition="left"
-                    fullWidth
-                  />
-                )}
-              </>
-            ) : (
-              <View style={styles.incompleteWarning}>
-                <Text style={styles.incompleteWarningText}>
-                  Complete all 14 days to export final PDF and sign the log.
-                </Text>
-              </View>
-            )}
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.dayCard,
+                      isCompleted && styles.dayCardCompleted,
+                      isTodayDate && styles.dayCardToday
+                    ]}
+                    onPress={() => {
+                      const targetDate = format(dayDate, 'yyyy-MM-dd');
+                      router.push(`/fitness/logs/day/${targetDate}?logId=${log.id}`);
+                    }}
+                  >
+                    <Text style={styles.dayNumber}>Day {dayNumber}</Text>
+                    <View style={styles.dayIcon}>
+                      {isCompleted ? (
+                        <CheckCircle size={16} color={Colors.success} />
+                      ) : (
+                        <XCircle size={16} color={Colors.error} />
+                      )}
+                    </View>
+                    <Text style={styles.dayDate}>{format(dayDate, 'MMM dd')}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+
+          {/* Actions */}
+          <View style={styles.actionsSection}>
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={() => {
+                    // Find the next incomplete day or today if within range
+                    const targetDate = getTargetDateForEntry(log.start_date, log.end_date, days);
+                    router.push(`/fitness/logs/day/${targetDate}?logId=${log.id}`);
+                  }}
+                >
+              <Calendar size={20} color={Colors.white} />
+              <Text style={styles.actionButtonText}>Continue Entry</Text>
+            </TouchableOpacity>
+
+            {daysCompleted === 14 && (
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => router.push(`/fitness/logs/sign?logId=${log.id}`)}
+              >
+                <FileText size={20} color={Colors.white} />
+                <Text style={styles.actionButtonText}>Sign & Complete</Text>
+              </TouchableOpacity>
+            )}
+
+
+          </View>
+        </ScrollView>
+      </LinearGradient>
     </View>
   );
 }
@@ -455,14 +252,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
+  gradient: {
     flex: 1,
   },
-  content: {
-    paddingBottom: 100,
-  },
-  
-  // Loading
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -470,272 +262,186 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...typography.bodyLarge,
-    color: Colors.textSecondary,
+    color: Colors.white,
   },
-  
-  // Error
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    gap: 20,
+    paddingHorizontal: spacing.lg,
   },
   errorText: {
-    ...typography.bodyLarge,
-    color: Colors.error,
+    ...typography.headingMedium,
+    color: Colors.white,
     textAlign: 'center',
+    marginBottom: spacing.lg,
   },
-  
-  // Header
+  backButton: {
+    backgroundColor: Colors.white + '20',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+  },
+  backButtonText: {
+    ...typography.labelMedium,
+    color: Colors.white,
+    fontWeight: '600',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingTop: 60, // Increased to account for status bar since we removed the navigation header
   },
-  backButton: {
+  headerBackButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white + '20',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
-  },
-  headerContent: {
-    flex: 1,
   },
   headerTitle: {
-    fontSize: 24,
+    ...typography.headingMedium,
+    color: Colors.white,
     fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 2,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-  },
-  shareButton: {
+  headerResetButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white + '20',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
-  // Status Section
-  statusSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    marginBottom: 24,
+  content: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
   },
-  statusCard: {
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.xl,
-    padding: 20,
-    ...shadows.medium,
+  sectionTitle: {
+    ...typography.headingSmall,
+    color: Colors.white,
+    fontWeight: '600',
+    marginBottom: spacing.md,
+  },
+  overviewSection: {
+    marginBottom: spacing.xl,
+  },
+  overviewCard: {
+    backgroundColor: Colors.white + '15',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.white + '20',
   },
-  statusHeader: {
+  overviewRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.sm,
   },
-  statusTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
+  overviewLabel: {
+    ...typography.bodyMedium,
+    color: Colors.white + 'CC',
   },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: borderRadius.full,
-  },
-  statusBadgeComplete: {
-    backgroundColor: Colors.success + '15',
-    borderWidth: 1,
-    borderColor: Colors.success + '30',
-  },
-  statusBadgeInProgress: {
-    backgroundColor: Colors.warning + '15',
-    borderWidth: 1,
-    borderColor: Colors.warning + '30',
-  },
-  statusBadgeText: {
-    fontSize: 12,
+  overviewValue: {
+    ...typography.bodyMedium,
+    color: Colors.white,
     fontWeight: '600',
   },
-  statusBadgeTextComplete: {
-    color: Colors.success,
-  },
-  statusBadgeTextInProgress: {
-    color: Colors.warning,
-  },
-  statusStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statusStat: {
-    alignItems: 'center',
-  },
-  statusStatValue: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: Colors.primary,
-    marginBottom: 4,
-  },
-  statusStatLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  
-  // Summary Section
-  summarySection: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  summaryCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.lg,
-    padding: 16,
-    alignItems: 'center',
-    ...shadows.level2,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  summaryValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.text,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  
-  // Progress Section
   progressSection: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
-  progressGrid: {
+  progressCard: {
+    backgroundColor: Colors.white + '15',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.white + '20',
+  },
+  progressBar: {
+    height: 12,
+    backgroundColor: Colors.white + '20',
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.success,
+    borderRadius: 6,
+  },
+  progressText: {
+    ...typography.bodyMedium,
+    color: Colors.white,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  dailyProgressSection: {
+    marginBottom: spacing.xl,
+  },
+  dailyGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing.sm,
   },
-  progressDay: {
+  dayCard: {
     width: '22%',
     aspectRatio: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.white + '15',
     borderRadius: borderRadius.md,
-    padding: 8,
+    borderWidth: 1,
+    borderColor: Colors.white + '20',
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.level2,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    padding: spacing.xs,
   },
-  progressDayComplete: {
-    backgroundColor: Colors.success + '10',
-    borderColor: Colors.success + '30',
+  dayCardCompleted: {
+    backgroundColor: Colors.success + '20',
+    borderColor: Colors.success + '40',
   },
-  progressDayPartial: {
-    backgroundColor: Colors.warning + '10',
-    borderColor: Colors.warning + '30',
+  dayCardToday: {
+    borderColor: Colors.warning,
+    borderWidth: 2,
   },
-  progressDayNumber: {
-    fontSize: 10,
+  dayNumber: {
+    ...typography.labelSmall,
+    color: Colors.white,
     fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  progressDayDate: {
     fontSize: 10,
-    color: Colors.textSecondary,
-    marginTop: 4,
   },
-  
-  // Warning Section
-  warningSection: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+  dayIcon: {
+    marginVertical: 2,
   },
-  warningCard: {
+  dayDate: {
+    ...typography.labelSmall,
+    color: Colors.white + 'CC',
+    fontSize: 9,
+  },
+  actionsSection: {
+    marginBottom: spacing.xl,
+    gap: spacing.md,
+  },
+  actionButton: {
     flexDirection: 'row',
-    backgroundColor: Colors.warning + '10',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white + '20',
     borderRadius: borderRadius.lg,
-    padding: 16,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.warning + '30',
-    gap: 12,
+    borderColor: Colors.white + '40',
   },
-  warningContent: {
-    flex: 1,
-  },
-  warningTitle: {
-    fontSize: 16,
+  actionButtonText: {
+    ...typography.labelLarge,
+    color: Colors.white,
     fontWeight: '600',
-    color: Colors.warning,
-    marginBottom: 4,
   },
-  warningText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  
-  // Export Section
   exportSection: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  exportOptions: {
-    gap: 12,
-  },
-  incompleteWarning: {
-    backgroundColor: Colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  incompleteWarningText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
+    marginTop: spacing.md,
   },
 });

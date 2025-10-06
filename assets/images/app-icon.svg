@@ -1,0 +1,25 @@
+
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="512" cy="512" r="512" fill="url(#bg)"/>
+  
+  <!-- Shield -->
+  <path d="M512 100 L650 200 L650 450 C650 550 600 600 512 650 C424 600 374 550 374 450 L374 200 Z" 
+        fill="white" 
+        stroke="white" 
+        stroke-width="8" 
+        stroke-linejoin="round"/>
+  
+  <!-- Star -->
+  <path d="M512 350 L540 420 L610 420 L550 470 L580 540 L512 490 L444 540 L474 470 L414 420 L484 420 Z" 
+        fill="#F97316" 
+        stroke="#F97316" 
+        stroke-width="2"/>
+</svg>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TextInput, TouchableOpacity, Switch, Platform, ScrollView, SafeAreaView, KeyboardAvoidingView } from 'react-native';
+import { Modal, View, Text, StyleSheet, TextInput, TouchableOpacity, Switch, Platform, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { z } from 'zod';
 import { X, ChevronDown, Check } from 'lucide-react-native';

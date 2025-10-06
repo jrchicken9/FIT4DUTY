@@ -1175,44 +1175,23 @@ export default function LFIStep() {
     return MessageSquare;
   };
 
-  const questionThemes = [
-    {
-      key: "about_you" as LFIQuestionKey,
-      icon: Users,
-      title: "Tell me about yourself / strengths and weaknesses",
-      description: "Personal assessment and self-awareness",
-    },
-    {
-      key: "employment_volunteer" as LFIQuestionKey,
-      icon: FileText,
-      title: "Describe your employment and volunteer history",
-      description: "Professional background and experience",
-    },
-    {
-      key: "knowledge_service" as LFIQuestionKey,
-      icon: Building,
-      title: "What do you know about our police service?",
-      description: "Knowledge of jurisdiction, divisions, Chief/Commissioner",
-    },
-    {
-      key: "community_issues" as LFIQuestionKey,
-      icon: Globe,
-      title: "What issues affect this community / region?",
-      description: "Local awareness and community understanding",
-    },
-    {
-      key: "motivation" as LFIQuestionKey,
-      icon: Lightbulb,
-      title: "Why do you want to be a police officer? Why this service?",
-      description: "Motivations and service alignment",
-    },
-    {
-      key: "driving_record" as LFIQuestionKey,
-      icon: Car,
-      title: "Tell me about your driving history / background record",
-      description: "Accountability and record transparency",
-    },
-  ];
+  // Icon mapping for the themes
+  const iconMap = {
+    Users,
+    FileText,
+    Building,
+    Globe,
+    Lightbulb,
+    Car,
+  };
+
+  // Convert LFI_QUESTION_THEMES to array with proper icon components
+  const questionThemes = Object.entries(LFI_QUESTION_THEMES).map(([key, theme]) => ({
+    key: key as LFIQuestionKey,
+    icon: iconMap[theme.icon as keyof typeof iconMap],
+    title: theme.title,
+    description: theme.description,
+  }));
 
   // Example answers that would score 100% on the grading system
   const exampleAnswers = {
@@ -1768,6 +1747,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
+    paddingTop: 115,
     paddingBottom: 40,
   },
   header: {

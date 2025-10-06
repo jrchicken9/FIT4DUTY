@@ -430,7 +430,7 @@ const applicationSteps: ApplicationStep[] = [
         url: "#",
       },
     ],
-    nextSteps: ["background-check"],
+    nextSteps: ["psychological-assessment"],
     monetization: {
       freePreview: {
         intro: "Overview of panel interview structure and what to expect during the ECI process.",
@@ -467,6 +467,54 @@ const applicationSteps: ApplicationStep[] = [
           ]
         }
       ]
+    },
+  },
+  {
+    id: "psychological-assessment",
+    title: "Psychological Assessment",
+    description: "Comprehensive psychological evaluation to assess your mental fitness and suitability for police work.",
+    requirements: [
+      "Complete psychological questionnaire",
+      "Participate in psychological interview",
+      "Provide consent for assessment",
+      "Disclose relevant mental health history",
+    ],
+    tips: [
+      "Be honest and authentic in your responses",
+      "Prepare to discuss stress management strategies",
+      "Review your mental health history",
+      "Stay calm and composed during assessment",
+    ],
+    estimatedTime: "2-4 weeks",
+    resources: [
+      {
+        title: "Psychological Assessment Guide",
+        url: "#",
+      },
+    ],
+    nextSteps: ["background-check"],
+    monetization: {
+      freePreview: {
+        intro: "Overview of the psychological assessment process and what to expect during evaluation.",
+        tips: [
+          "The psychological assessment evaluates your mental fitness for police work",
+          "Be completely honest about your mental health history",
+          "Prepare to discuss how you handle stress and difficult situations"
+        ],
+        basicGuidance: "The psychological assessment is a crucial step in ensuring you're mentally prepared for police work."
+      },
+      premiumUpgrade: {
+        title: "Psychological Assessment Preparation Guide",
+        description: "Access comprehensive preparation materials, sample questions, and stress management strategies.",
+        features: [
+          "Assessment preparation guide",
+          "Sample psychological questions",
+          "Stress management strategies",
+          "Mental health disclosure guidance",
+          "Interview techniques and tips"
+        ]
+      },
+      oneTimeServices: []
     },
   },
   {

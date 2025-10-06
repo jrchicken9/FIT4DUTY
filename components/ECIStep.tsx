@@ -1587,6 +1587,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
+    paddingTop: 115,
     paddingBottom: 40,
   },
   header: {

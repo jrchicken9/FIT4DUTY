@@ -1,0 +1,76 @@
+id,text,domain,adaptive_key
+1,I can stay calm even when someone is yelling at me.,EMO,T
+2,I sometimes lose my temper over small issues.,EMO,F
+3,I find it hard to stop thinking about mistakes I’ve made.,EMO,F
+4,I rarely feel anxious in stressful situations.,EMO,T
+5,I often feel tense without knowing why.,EMO,F
+6,"When I’m under pressure, I still make clear decisions.",EMO,T
+7,I get upset easily when things don’t go my way.,EMO,F
+8,I have no trouble sleeping after a stressful day.,EMO,T
+9,I tend to bottle up my emotions instead of showing them.,EMO,F
+10,I sometimes feel like I’m constantly “on edge.”,EMO,F
+11,"I believe following the rules is always important, even when no one is watching.",INT,T
+12,I sometimes cut corners if I know I won’t get caught.,INT,F
+13,"I feel guilty if I do something dishonest, even slightly.",INT,T
+14,I have lied to protect myself from getting in trouble.,INT,F
+15,I think people exaggerate how important honesty is.,INT,F
+16,"I have never stolen anything, even something small.",INT,T
+17,I believe integrity is more important than popularity.,INT,T
+18,I sometimes ignore small rules if they seem unnecessary.,INT,F
+19,I would report a coworker if I saw them doing something unethical.,INT,T
+20,"I believe that once trust is broken, it can rarely be repaired.",INT,F
+21,I enjoy being around people more than being alone.,SOC,T
+22,I find it difficult to approach strangers.,SOC,F
+23,I prefer to observe rather than participate in group discussions.,SOC,F
+24,I easily make friends wherever I go.,SOC,T
+25,I sometimes feel uncomfortable in large social gatherings.,SOC,F
+26,I often take the lead in group situations.,SOC,T
+27,I find it easy to get along with people who have different opinions.,SOC,T
+28,I sometimes say things I regret when arguing.,SOC,F
+29,I usually let others speak first in conversations.,SOC,T
+30,I enjoy working in teams more than working alone.,SOC,T
+31,I make decisions after thinking them through carefully.,IMP,T
+32,I sometimes act without thinking about the consequences.,IMP,F
+33,I can stay focused on boring or repetitive tasks.,IMP,T
+34,I often change my mind suddenly about what I want to do.,IMP,F
+35,"I finish what I start, even if it becomes difficult.",IMP,T
+36,I occasionally say things impulsively and regret them later.,IMP,F
+37,I find it hard to control my emotions when provoked.,IMP,F
+38,I prefer a structured daily routine over spontaneity.,IMP,T
+39,I sometimes spend money impulsively.,IMP,F
+40,I can stay patient even when progress is slow.,IMP,T
+41,I believe respect for authority is essential in any workplace.,AUT,T
+42,I sometimes question authority if I think they are wrong.,AUT,T
+43,I find it easy to follow orders even when I disagree.,AUT,T
+44,I prefer to make my own rules rather than follow others’.,AUT,F
+45,I think it’s important to challenge unfair leadership.,AUT,T
+46,I respect people who enforce rules fairly and consistently.,AUT,T
+47,I sometimes feel irritated when someone tells me what to do.,AUT,F
+48,I believe discipline is necessary for success.,AUT,T
+49,"I would never lie to a superior, even to protect a friend.",AUT,T
+50,I accept constructive criticism without taking it personally.,AUT,T
+51,I recover quickly after stressful situations.,RES,T
+52,I often doubt my ability to handle difficult tasks.,RES,F
+53,I believe I handle pressure better than most people.,RES,T
+54,I sometimes feel emotionally drained for no reason.,RES,F
+55,I find it easy to motivate myself after setbacks.,RES,T
+56,I tend to focus on problems rather than solutions.,RES,F
+57,I adapt well to sudden changes.,RES,T
+58,I sometimes feel that life is unfair to me.,RES,F
+59,I remain calm when others panic.,RES,T
+60,I often worry about things that might go wrong.,RES,F
+61,I sometimes hear my name when no one is around.,RTP,F
+62,I believe some people have special powers others don’t.,RTP,F
+63,I’ve felt that strangers were watching me in public places.,RTP,F
+64,I’ve seen things others said they could not see.,RTP,F
+65,"I sometimes feel disconnected from reality, like in a dream.",RTP,F
+66,I believe my thoughts can influence events around me.,RTP,F
+67,I occasionally have difficulty knowing what is real and what isn’t.,RTP,F
+68,I often feel people talk about me behind my back.,RTP,F
+69,I believe coincidences often carry special meaning.,RTP,F
+70,I’ve had experiences that I can’t fully explain to anyone.,RTP,F
+71,I take pride in doing my work perfectly.,WRK,T
+72,I would rather complete a task late than rush it poorly.,WRK,T
+73,I feel comfortable working long hours when needed.,WRK,T
+74,I like to set personal goals and track my progress.,WRK,T
+75,I believe commitment and perseverance matter more than natural talent.,WRK,T

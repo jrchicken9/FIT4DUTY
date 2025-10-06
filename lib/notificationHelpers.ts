@@ -136,8 +136,14 @@ export async function cancelFitnessLogNotifications(logId: string): Promise<void
     const notificationIds = await getStoredNotificationIds(logId);
     
     if (notificationIds.length > 0) {
-      // Cancel each notification
-      await Notifications.cancelScheduledNotificationAsync(notificationIds[0]); // Cancel all at once
+      // Cancel each notification individually
+      for (const notificationId of notificationIds) {
+        try {
+          await Notifications.cancelScheduledNotificationAsync(notificationId);
+        } catch (error) {
+          console.warn(`Failed to cancel notification ${notificationId}:`, error);
+        }
+      }
       
       // Remove from storage
       await removeStoredNotificationIds(logId);

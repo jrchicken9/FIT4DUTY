@@ -1,140 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Alert,
-  Platform,
+  ScrollView,
+  SafeAreaView,
+  Modal,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import {
-  Calendar,
-  Clock,
-  CheckCircle2,
-  ArrowLeft,
-  AlertTriangle,
-  Bell,
-  BellOff,
-  Info,
-  Target,
-  Dumbbell,
-  Footprints,
-  Brain,
-  BedDouble,
-} from 'lucide-react-native';
+import { router, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Calendar, ArrowLeft, Clock, CheckCircle, X, FileText, Plus, ArrowRight } from 'lucide-react-native';
+import { format, addDays } from 'date-fns';
+
 import Colors from '@/constants/colors';
 import { typography, spacing, borderRadius, shadows } from '@/constants/designSystem';
 import { fitnessLogService } from '@/lib/fitnessLogService';
-import { scheduleFitnessLogNotifications, requestNotificationPermissions } from '@/lib/notificationHelpers';
-import Button from '@/components/Button';
-import ProfessionalBackground from '@/components/ProfessionalBackground';
+import { ENABLE_OACP_FITNESS_LOGS } from '@/constants/applicationFeatures';
 
 export default function StartFitnessLogScreen() {
-  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-
-  useEffect(() => {
-    checkNotificationPermissions();
-  }, []);
-
-  const checkNotificationPermissions = async () => {
-    const hasPermission = await requestNotificationPermissions();
-    setNotificationsEnabled(hasPermission);
-  };
-
-  const handleDateChange = (event: any, date?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
-    if (date) {
-      setSelectedDate(date);
-    }
-  };
-
-  const calculateEndDate = (startDate: Date): Date => {
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 13);
-    return endDate;
-  };
-
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('en-CA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  const [isCreating, setIsCreating] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdLog, setCreatedLog] = useState<any>(null);
 
   const handleStartLog = async () => {
-    try {
-      setLoading(true);
+    if (!ENABLE_OACP_FITNESS_LOGS) {
+      Alert.alert('Feature Disabled', 'Fitness logs are currently disabled.');
+      return;
+    }
 
+    setIsCreating(true);
+    try {
+      const startDate = format(selectedDate, 'yyyy-MM-dd');
+      const endDate = format(addDays(selectedDate, 13), 'yyyy-MM-dd');
+      
       // Check if user can start a new log
       const canStart = await fitnessLogService.canStartNewLog();
       if (!canStart) {
         Alert.alert(
           'Active Log Exists',
-          'You already have an active fitness log. Please complete or cancel it before starting a new one.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      // Validate date (cannot be more than 30 days in the past)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      if (selectedDate < thirtyDaysAgo) {
-        Alert.alert(
-          'Invalid Date',
-          'Start date cannot be more than 30 days in the past.',
+          'You already have an active fitness log. Please complete or reset your current log before starting a new one.',
           [{ text: 'OK' }]
         );
         return;
       }
 
       // Create the log
-      const startDateString = selectedDate.toISOString().slice(0, 10);
-      const log = await fitnessLogService.createLog(startDateString);
-
-      // Schedule notifications if enabled
-      if (notificationsEnabled) {
-        try {
-          await scheduleFitnessLogNotifications(startDateString, log.id);
-        } catch (error) {
-          console.warn('Failed to schedule notifications:', error);
-          // Don't fail the log creation if notifications fail
-        }
-      }
-
-      Alert.alert(
-        'Log Created Successfully!',
-        `Your 14-day fitness log has been created. You'll receive daily reminders to complete your entries.`,
-        [
-          {
-            text: 'Start Logging',
-            onPress: () => {
-              // Navigate to today's entry
-              const today = new Date().toISOString().slice(0, 10);
-              const startDate = new Date(log.start_date);
-              const currentDate = new Date(today);
-              const daysDiff = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-              const currentDay = Math.max(1, Math.min(14, daysDiff + 1));
-              
-              // Calculate the date for the current day
-              const targetDate = new Date(startDate);
-              targetDate.setDate(startDate.getDate() + (currentDay - 1));
-              
-              router.replace(`/fitness/logs/day/${targetDate.toISOString().slice(0, 10)}`);
-            }
-          }
-        ]
-      );
+      const log = await fitnessLogService.createLog(startDate);
+      
+      // Show custom success modal
+      setCreatedLog(log);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error creating fitness log:', error);
       Alert.alert(
@@ -143,25 +61,20 @@ export default function StartFitnessLogScreen() {
         [{ text: 'OK' }]
       );
     } finally {
-      setLoading(false);
+      setIsCreating(false);
     }
   };
 
-  const endDate = calculateEndDate(selectedDate);
-  const today = new Date();
-  const isToday = selectedDate.toDateString() === today.toDateString();
-  const isPast = selectedDate < today;
+  const formatDate = (date: Date) => format(date, 'MMMM dd, yyyy');
+  const formatEndDate = (date: Date) => format(addDays(date, 13), 'MMMM dd, yyyy');
 
   return (
     <View style={styles.container}>
-      <ProfessionalBackground variant="fitness">
-        <View />
-      </ProfessionalBackground>
-      
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+      <LinearGradient
+        colors={['#3B82F6', '#1E40AF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -169,442 +82,503 @@ export default function StartFitnessLogScreen() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <ArrowLeft size={24} color={Colors.text} />
+            <ArrowLeft size={24} color={Colors.white} />
           </TouchableOpacity>
-          
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Start 14-Day Log</Text>
-            <Text style={styles.headerSubtitle}>
-              Begin your OACP fitness tracking journey
-            </Text>
-          </View>
+          <Text style={styles.headerTitle}>Start 14-Day Log</Text>
+          <View style={styles.headerSpacer} />
         </View>
 
-        {/* Main Content */}
-        <View style={styles.mainContent}>
-          {/* Date Selection Card */}
-          <View style={styles.dateCard}>
-            <View style={styles.cardHeader}>
-              <Calendar size={24} color={Colors.primary} />
-              <Text style={styles.cardTitle}>Select Start Date</Text>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Title Section */}
+          <View style={styles.titleSection}>
+            <View style={styles.iconContainer}>
+              <Calendar size={32} color={Colors.white} />
             </View>
-            
-            <View style={styles.dateSection}>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <View style={styles.dateButtonContent}>
-                  <View style={styles.dateInfo}>
-                    <Text style={styles.dateLabel}>Start Date</Text>
-                    <Text style={styles.dateValue}>{formatDate(selectedDate)}</Text>
-                  </View>
-                  <Calendar size={20} color={Colors.primary} />
-                </View>
-              </TouchableOpacity>
-              
+            <Text style={styles.title}>OACP Fitness Log</Text>
+            <Text style={styles.subtitle}>
+              Choose your start date to begin your 14-day activity tracking
+            </Text>
+          </View>
+
+          {/* Date Selection */}
+          <View style={styles.dateSection}>
+            <Text style={styles.sectionTitle}>Start Date</Text>
+            <View style={styles.dateCard}>
+              <View style={styles.dateInfo}>
+                <Text style={styles.dateLabel}>Selected Date</Text>
+                <Text style={styles.dateValue}>{formatDate(selectedDate)}</Text>
+              </View>
               <View style={styles.dateInfo}>
                 <Text style={styles.dateLabel}>End Date</Text>
-                <Text style={styles.dateValue}>{formatDate(endDate)}</Text>
+                <Text style={styles.dateValue}>{formatEndDate(selectedDate)}</Text>
               </View>
-            </View>
-            
-            {showDatePicker && (
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handleDateChange}
-                maximumDate={new Date()}
-                minimumDate={new Date(2020, 0, 1)}
-              />
-            )}
-            
-            {/* Date Status */}
-            <View style={styles.dateStatus}>
-              {isToday ? (
-                <View style={styles.statusBadge}>
-                  <Clock size={16} color={Colors.warning} />
-                  <Text style={styles.statusText}>Starting Today</Text>
-                </View>
-              ) : isPast ? (
-                <View style={styles.statusBadge}>
-                  <AlertTriangle size={16} color={Colors.warning} />
-                  <Text style={styles.statusText}>Past Date Selected</Text>
-                </View>
-              ) : (
-                <View style={styles.statusBadge}>
-                  <CheckCircle2 size={16} color={Colors.success} />
-                  <Text style={styles.statusText}>Future Start Date</Text>
-                </View>
-              )}
             </View>
           </View>
 
-          {/* Notifications Card */}
-          <View style={styles.notificationsCard}>
-            <View style={styles.cardHeader}>
-              {notificationsEnabled ? (
-                <Bell size={24} color={Colors.success} />
-              ) : (
-                <BellOff size={24} color={Colors.textSecondary} />
-              )}
-              <Text style={styles.cardTitle}>Daily Reminders</Text>
-            </View>
-            
-            <View style={styles.notificationsContent}>
-              <Text style={styles.notificationsDescription}>
-                Get daily notifications at 8:00 PM to remind you to complete your fitness log entry.
-              </Text>
-              
-              <View style={styles.notificationsStatus}>
-                <Text style={[
-                  styles.notificationsStatusText,
-                  notificationsEnabled ? styles.notificationsEnabled : styles.notificationsDisabled
-                ]}>
-                  {notificationsEnabled ? 'Notifications Enabled' : 'Notifications Disabled'}
+          {/* Information Section */}
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>What to Expect</Text>
+            <View style={styles.infoCards}>
+              <View style={styles.infoCard}>
+                <Clock size={20} color={Colors.white} />
+                <Text style={styles.infoTitle}>14 Days</Text>
+                <Text style={styles.infoDescription}>
+                  Track your daily activities for exactly 14 consecutive days
                 </Text>
               </View>
               
-              {!notificationsEnabled && (
-                <TouchableOpacity
-                  style={styles.enableNotificationsButton}
-                  onPress={checkNotificationPermissions}
-                >
-                  <Bell size={16} color={Colors.white} />
-                  <Text style={styles.enableNotificationsText}>Enable Notifications</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-
-          {/* What You'll Track Card */}
-          <View style={styles.trackingCard}>
-            <View style={styles.cardHeader}>
-              <Target size={24} color={Colors.primary} />
-              <Text style={styles.cardTitle}>What You'll Track</Text>
-            </View>
-            
-            <View style={styles.trackingItems}>
-              <View style={styles.trackingItem}>
-                <Footprints size={20} color={Colors.success} />
-                <View style={styles.trackingItemContent}>
-                  <Text style={styles.trackingItemTitle}>Running & Cardio</Text>
-                  <Text style={styles.trackingItemDescription}>
-                    Duration, distance, and location
-                  </Text>
-                </View>
+              <View style={styles.infoCard}>
+                <CheckCircle size={20} color={Colors.white} />
+                <Text style={styles.infoTitle}>Daily Entries</Text>
+                <Text style={styles.infoDescription}>
+                  Log runs, strength training, other activities, stress management, and sleep
+                </Text>
               </View>
               
-              <View style={styles.trackingItem}>
-                <Dumbbell size={20} color={Colors.success} />
-                <View style={styles.trackingItemContent}>
-                  <Text style={styles.trackingItemTitle}>Strength Training</Text>
-                  <Text style={styles.trackingItemDescription}>
-                    Duration, environment, split, and exercises
-                  </Text>
-                </View>
-              </View>
-              
-              <View style={styles.trackingItem}>
-                <Brain size={20} color={Colors.success} />
-                <View style={styles.trackingItemContent}>
-                  <Text style={styles.trackingItemTitle}>Stress Management</Text>
-                  <Text style={styles.trackingItemDescription}>
-                    Daily stress relief methods (required)
-                  </Text>
-                </View>
-              </View>
-              
-              <View style={styles.trackingItem}>
-                <BedDouble size={20} color={Colors.success} />
-                <View style={styles.trackingItemContent}>
-                  <Text style={styles.trackingItemTitle}>Sleep Tracking</Text>
-                  <Text style={styles.trackingItemDescription}>
-                    Hours of sleep per night (required)
-                  </Text>
-                </View>
+              <View style={styles.infoCard}>
+                <Calendar size={20} color={Colors.white} />
+                <Text style={styles.infoTitle}>Official PDF</Text>
+                <Text style={styles.infoDescription}>
+                  Generate a professional PDF ready for OACP submission
+                </Text>
               </View>
             </View>
           </View>
 
-          {/* Important Information */}
-          <View style={styles.infoCard}>
-            <View style={styles.cardHeader}>
-              <Info size={24} color={Colors.warning} />
-              <Text style={styles.cardTitle}>Important Information</Text>
-            </View>
-            
-            <View style={styles.infoContent}>
-              <Text style={styles.infoText}>
-                • Each day requires stress management and sleep hours to be marked complete
-              </Text>
-              <Text style={styles.infoText}>
-                • You can save partial entries as drafts and complete them later
-              </Text>
-              <Text style={styles.infoText}>
-                • All 14 days must be completed before you can sign and export
-              </Text>
-              <Text style={styles.infoText}>
-                • Once signed, the log cannot be edited
-              </Text>
+          {/* Requirements */}
+          <View style={styles.requirementsSection}>
+            <Text style={styles.sectionTitle}>Daily Requirements</Text>
+            <View style={styles.requirementsList}>
+              <View style={styles.requirementItem}>
+                <CheckCircle size={16} color={Colors.white} />
+                <Text style={styles.requirementText}>Stress management method (required)</Text>
+              </View>
+              <View style={styles.requirementItem}>
+                <CheckCircle size={16} color={Colors.white} />
+                <Text style={styles.requirementText}>Sleep hours (required)</Text>
+              </View>
+              <View style={styles.requirementItem}>
+                <CheckCircle size={16} color={Colors.white} />
+                <Text style={styles.requirementText}>Run, strength training, or other activity (optional)</Text>
+              </View>
             </View>
           </View>
-        </View>
+        </ScrollView>
 
-        {/* Action Buttons */}
+        {/* Action Button */}
         <View style={styles.actionSection}>
-          <Button
-            title="Start 14-Day Log"
+          <TouchableOpacity 
+            style={[styles.startButton, isCreating && styles.startButtonDisabled]}
             onPress={handleStartLog}
-            variant="gradient"
-            fullWidth
-            loading={loading}
-            disabled={loading}
-            icon={<CheckCircle2 size={16} color={Colors.white} />}
-            iconPosition="left"
-          />
-          
-          <Button
-            title="Cancel"
-            onPress={() => router.back()}
-            variant="outline"
-            fullWidth
-            style={styles.cancelButton}
-          />
+            disabled={isCreating}
+          >
+            <LinearGradient
+              colors={isCreating ? ['#9CA3AF', '#6B7280'] : ['#10B981', '#059669']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.startButtonGradient}
+            >
+              <Text style={styles.startButtonText}>
+                {isCreating ? 'Creating Log...' : 'Start 14-Day Log'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </LinearGradient>
+
+      {/* Custom Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <LinearGradient
+              colors={[Colors.primary, Colors.secondary]}
+              style={styles.modalGradient}
+            >
+              {/* Header */}
+              <View style={styles.modalHeader}>
+                <View style={styles.modalIconContainer}>
+                  <CheckCircle size={32} color={Colors.white} />
+                </View>
+                <TouchableOpacity 
+                  style={styles.modalCloseButton}
+                  onPress={() => setShowSuccessModal(false)}
+                >
+                  <X size={20} color={Colors.white} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Content */}
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>🎉 Fitness Log Started!</Text>
+                <Text style={styles.modalSubtitle}>
+                  Your 14-day OACP fitness log is ready from {format(selectedDate, 'MMM dd, yyyy')} to {format(addDays(selectedDate, 13), 'MMM dd, yyyy')}
+                </Text>
+
+                {/* Tips Section */}
+                <View style={styles.tipsSection}>
+                  <Text style={styles.tipsTitle}>💡 Daily Logging Tips:</Text>
+                  <View style={styles.tipsList}>
+                    <View style={styles.tipItem}>
+                      <Text style={styles.tipBullet}>•</Text>
+                      <Text style={styles.tipText}>Log your activities at the end of each day</Text>
+                    </View>
+                    <View style={styles.tipItem}>
+                      <Text style={styles.tipBullet}>•</Text>
+                      <Text style={styles.tipText}>Include duration, distance, and location details</Text>
+                    </View>
+                    <View style={styles.tipItem}>
+                      <Text style={styles.tipBullet}>•</Text>
+                      <Text style={styles.tipText}>Track stress management and sleep hours daily</Text>
+                    </View>
+                    <View style={styles.tipItem}>
+                      <Text style={styles.tipBullet}>•</Text>
+                      <Text style={styles.tipText}>Complete all 14 days to generate your PDF</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.modalActions}>
+                  <TouchableOpacity 
+                    style={styles.modalActionButton}
+                    onPress={() => {
+                      setShowSuccessModal(false);
+                      router.replace(`/fitness/logs/summary?logId=${createdLog.id}`);
+                    }}
+                  >
+                    <FileText size={16} color={Colors.text} />
+                    <Text style={styles.modalActionButtonText}>View Summary</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalActionButton}
+                    onPress={() => {
+                      setShowSuccessModal(false);
+                      router.replace(`/fitness/logs/day/${format(selectedDate, 'yyyy-MM-dd')}?logId=${createdLog.id}`);
+                    }}
+                  >
+                    <Plus size={16} color={Colors.text} />
+                    <Text style={styles.modalActionButtonText}>Start First Entry</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity 
+                  style={styles.modalSecondaryButton}
+                  onPress={() => {
+                    setShowSuccessModal(false);
+                    router.replace('/(tabs)/fitness');
+                  }}
+                >
+                  <ArrowRight size={16} color={Colors.white} />
+                  <Text style={styles.modalSecondaryButtonText}>Go to Fitness Tab</Text>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
+  gradient: {
     flex: 1,
   },
-  content: {
-    paddingBottom: 100,
-  },
-  
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingTop: 60, // Increased to account for status bar since we removed the navigation header
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.white + '20',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
-    ...shadows.level2,
-  },
-  headerContent: {
-    flex: 1,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.text,
-    letterSpacing: -0.8,
-    marginBottom: 4,
+    ...typography.headingMedium,
+    color: Colors.white,
+    fontWeight: '700',
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    fontWeight: '500',
+  headerSpacer: {
+    width: 40,
   },
-  
-  // Main Content
-  mainContent: {
-    paddingHorizontal: 20,
-    gap: 20,
+  content: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
   },
-  
-  // Cards
-  dateCard: {
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.xl,
-    padding: 20,
-    ...shadows.medium,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  notificationsCard: {
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.xl,
-    padding: 20,
-    ...shadows.medium,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  trackingCard: {
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.xl,
-    padding: 20,
-    ...shadows.medium,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  infoCard: {
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.xl,
-    padding: 20,
-    ...shadows.medium,
-    borderWidth: 1,
-    borderColor: Colors.warning + '20',
-  },
-  
-  // Card Header
-  cardHeader: {
-    flexDirection: 'row',
+  titleSection: {
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
+    marginBottom: spacing.xl,
+    marginTop: spacing.lg,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text,
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.white + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
   },
-  
-  // Date Section
+  title: {
+    ...typography.headingLarge,
+    color: Colors.white,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  subtitle: {
+    ...typography.bodyLarge,
+    color: Colors.white + 'CC',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
   dateSection: {
-    gap: 16,
+    marginBottom: spacing.xl,
   },
-  dateButton: {
-    backgroundColor: Colors.surface,
+  sectionTitle: {
+    ...typography.headingSmall,
+    color: Colors.white,
+    fontWeight: '600',
+    marginBottom: spacing.md,
+  },
+  dateCard: {
+    backgroundColor: Colors.white + '15',
     borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  dateButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
+    borderColor: Colors.white + '20',
   },
   dateInfo: {
-    flex: 1,
+    marginBottom: spacing.sm,
   },
   dateLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 4,
-    fontWeight: '500',
+    ...typography.labelMedium,
+    color: Colors.white + 'CC',
+    marginBottom: 2,
   },
   dateValue: {
-    fontSize: 16,
-    color: Colors.text,
+    ...typography.bodyLarge,
+    color: Colors.white,
     fontWeight: '600',
   },
-  dateStatus: {
-    marginTop: 12,
+  infoSection: {
+    marginBottom: spacing.xl,
   },
-  statusBadge: {
-    flexDirection: 'row',
+  infoCards: {
+    gap: spacing.md,
+  },
+  infoCard: {
+    backgroundColor: Colors.white + '15',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.white + '20',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: borderRadius.md,
-    alignSelf: 'flex-start',
-    gap: 6,
   },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.textSecondary,
+  infoTitle: {
+    ...typography.labelLarge,
+    color: Colors.white,
+    fontWeight: '600',
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  
-  // Notifications
-  notificationsContent: {
-    gap: 12,
-  },
-  notificationsDescription: {
-    fontSize: 14,
-    color: Colors.textSecondary,
+  infoDescription: {
+    ...typography.bodySmall,
+    color: Colors.white + 'CC',
+    textAlign: 'center',
     lineHeight: 20,
   },
-  notificationsStatus: {
-    marginVertical: 8,
+  requirementsSection: {
+    marginBottom: spacing.xl,
   },
-  notificationsStatusText: {
-    fontSize: 16,
+  requirementsList: {
+    backgroundColor: Colors.white + '15',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.white + '20',
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  requirementText: {
+    ...typography.bodySmall,
+    color: Colors.white + 'CC',
+    flex: 1,
+  },
+  actionSection: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg, // Reduced from spacing.xl to minimize bottom space
+    paddingTop: spacing.md,
+  },
+  startButton: {
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    ...shadows.large,
+  },
+  startButtonDisabled: {
+    opacity: 0.7,
+  },
+  startButtonGradient: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  startButtonText: {
+    ...typography.labelLarge,
+    color: Colors.white,
+    fontWeight: '700',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    ...shadows.level4,
+  },
+  modalGradient: {
+    padding: spacing.xl,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.white + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.white + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalContent: {
+    alignItems: 'center',
+  },
+  modalTitle: {
+    ...typography.headingLarge,
+    color: Colors.white,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  modalSubtitle: {
+    ...typography.bodyMedium,
+    color: Colors.white + 'DD',
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+    lineHeight: 22,
+  },
+  tipsSection: {
+    width: '100%',
+    backgroundColor: Colors.white + '10',
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.white + '20',
+  },
+  tipsTitle: {
+    ...typography.headingSmall,
+    color: Colors.white,
     fontWeight: '600',
+    marginBottom: spacing.md,
   },
-  notificationsEnabled: {
-    color: Colors.success,
+  tipsList: {
+    gap: spacing.sm,
   },
-  notificationsDisabled: {
-    color: Colors.textSecondary,
+  tipItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
-  enableNotificationsButton: {
+  tipBullet: {
+    ...typography.bodyMedium,
+    color: Colors.white,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  tipText: {
+    ...typography.bodySmall,
+    color: Colors.white + 'DD',
+    flex: 1,
+    lineHeight: 18,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+    marginBottom: spacing.lg,
+  },
+  modalActionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 8,
-    alignSelf: 'flex-start',
+    backgroundColor: Colors.white,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    ...shadows.level2,
   },
-  enableNotificationsText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.white,
-  },
-  
-  // Tracking Items
-  trackingItems: {
-    gap: 16,
-  },
-  trackingItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  trackingItemContent: {
-    flex: 1,
-  },
-  trackingItemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+  modalActionButtonText: {
+    ...typography.buttonMedium,
     color: Colors.text,
-    marginBottom: 4,
+    fontWeight: '600',
   },
-  trackingItemDescription: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 18,
+  modalSecondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.white + '40',
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
-  
-  // Info Content
-  infoContent: {
-    gap: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  
-  // Action Section
-  actionSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    gap: 12,
-  },
-  cancelButton: {
-    marginTop: 8,
+  modalSecondaryButtonText: {
+    ...typography.buttonMedium,
+    color: Colors.white,
+    fontWeight: '500',
   },
 });

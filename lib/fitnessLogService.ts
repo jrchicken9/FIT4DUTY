@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase';
 import type { FitnessLog, FitnessLogDay, FitnessLogDayFormData, FitnessLogProgress } from '@/types/fitness-log';
+import type { ExtendedFitnessLog, ExtendedFitnessLogDay, OacpFitnessLogDayFormData } from '@/types/oacpFitnessLog';
+import { generateFitnessLogDays } from './dateUtils';
+import { format, addDays } from 'date-fns';
+import { fitnessLogToOacpState, withOacpDefaults } from '@/utils/oacpDefaults';
 
 export const fitnessLogService = {
   /**
@@ -35,10 +39,10 @@ export const fitnessLogService = {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Calculate end date (start + 13 days)
-      const end = new Date(start_date);
-      end.setDate(end.getDate() + 13);
-      const end_date = end.toISOString().slice(0, 10);
+      // Calculate end date (start + 13 days) using date-fns for consistency with start screen
+      const startDateObj = new Date(start_date + 'T00:00:00');
+      const endDate = addDays(startDateObj, 13);
+      const end_date = format(endDate, 'yyyy-MM-dd');
 
       // Create the log
       const { data: log, error } = await supabase
@@ -53,15 +57,8 @@ export const fitnessLogService = {
 
       if (error) throw error;
 
-      // Seed 14 days
-      const days = Array.from({ length: 14 }).map((_, i) => {
-        const d = new Date(start_date);
-        d.setDate(d.getDate() + i);
-        return { 
-          log_id: log.id, 
-          day_date: d.toISOString().slice(0, 10) 
-        };
-      });
+      // Seed 14 days with consistent date formatting
+      const days = generateFitnessLogDays(log.id, start_date);
 
       const { error: dayErr } = await supabase
         .from('fitness_log_days')
@@ -118,14 +115,32 @@ export const fitnessLogService = {
   /**
    * Update a day entry (save as draft)
    */
-  async updateDay(day: Partial<FitnessLogDay> & { id: string }): Promise<void> {
+  async updateDay(logId: string, date: string, data: FitnessLogDayFormData | OacpFitnessLogDayFormData): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('fitness_log_days')
-        .update(day)
-        .eq('id', day.id);
+      // Check if day exists
+      const existingDay = await this.getDay(logId, date);
+      
+      if (existingDay) {
+        // Update existing day
+        const { error } = await supabase
+          .from('fitness_log_days')
+          .update(data)
+          .eq('log_id', logId)
+          .eq('day_date', date);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Create new day entry
+        const { error } = await supabase
+          .from('fitness_log_days')
+          .insert({
+            log_id: logId,
+            day_date: date,
+            ...data
+          });
+
+        if (error) throw error;
+      }
     } catch (error) {
       console.error('Error updating day:', error);
       throw error;
@@ -135,20 +150,28 @@ export const fitnessLogService = {
   /**
    * Mark a day as complete (requires stress_method and sleep_hours)
    */
-  async markDayComplete(id: string, data: FitnessLogDayFormData): Promise<void> {
+  async markDayComplete(logId: string, date: string): Promise<void> {
     try {
+      // First get the current day data to validate
+      const day = await this.getDay(logId, date);
+      
+      // If day doesn't exist, we can't mark it complete
+      if (!day) {
+        throw new Error('Day entry not found. Please save your entry first before marking it complete.');
+      }
+
       // Validate required fields
-      if (!data.stress_method || !data.sleep_hours) {
+      if (!day.stress_method || day.sleep_hours === undefined || day.sleep_hours === null) {
         throw new Error('Stress management method and sleep hours are required to complete a day');
       }
 
       const { error } = await supabase
         .from('fitness_log_days')
         .update({ 
-          ...data,
           is_complete: true 
         })
-        .eq('id', id);
+        .eq('log_id', logId)
+        .eq('day_date', date);
 
       if (error) throw error;
     } catch (error) {
@@ -240,28 +263,37 @@ export const fitnessLogService = {
 
     // Required fields for completion
     if (!data.stress_method?.trim()) {
-      errors.stress_method = 'Stress management method is required';
+      errors.stress_method = 'Please enter how you managed stress today (meditation, exercise, etc.)';
     }
 
     if (data.sleep_hours === undefined || data.sleep_hours === null || data.sleep_hours < 0) {
-      errors.sleep_hours = 'Sleep hours must be a valid number (0 or greater)';
+      errors.sleep_hours = 'Please enter how many hours you slept (0 or more)';
     }
 
-    // Optional validation for other fields
+    // Optional validation for other fields with helpful messages
     if (data.run_duration_min !== undefined && data.run_duration_min < 0) {
-      errors.run_duration_min = 'Run duration must be 0 or greater';
+      errors.run_duration_min = 'Run duration cannot be negative';
     }
 
     if (data.run_distance_km !== undefined && data.run_distance_km < 0) {
-      errors.run_distance_km = 'Run distance must be 0 or greater';
+      errors.run_distance_km = 'Run distance cannot be negative';
     }
 
     if (data.strength_duration_min !== undefined && data.strength_duration_min < 0) {
-      errors.strength_duration_min = 'Strength duration must be 0 or greater';
+      errors.strength_duration_min = 'Strength training duration cannot be negative';
     }
 
     if (data.other_activity_duration_min !== undefined && data.other_activity_duration_min < 0) {
-      errors.other_activity_duration_min = 'Activity duration must be 0 or greater';
+      errors.other_activity_duration_min = 'Activity duration cannot be negative';
+    }
+
+    // Additional helpful validations
+    if (data.sleep_hours !== undefined && data.sleep_hours > 24) {
+      errors.sleep_hours = 'Sleep hours cannot exceed 24 hours';
+    }
+
+    if (data.run_duration_min !== undefined && data.run_duration_min > 480) {
+      errors.run_duration_min = 'Run duration seems unusually long (over 8 hours)';
     }
 
     return {
@@ -327,6 +359,100 @@ export const fitnessLogService = {
       if (logError) throw logError;
     } catch (error) {
       console.error('Error deleting log:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get the active log as OACP state for enhanced UI
+   */
+  async getActiveLogAsOacpState() {
+    try {
+      const log = await this.getActiveLog();
+      if (!log) return null;
+
+      const days = await this.getDays(log.id);
+      return fitnessLogToOacpState(log, days);
+    } catch (error) {
+      console.error('Error getting active log as OACP state:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update log with OACP-specific fields
+   */
+  async updateLogOacpFields(logId: string, oacpData: Partial<ExtendedFitnessLog>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('fitness_logs')
+        .update({
+          full_name: oacpData.full_name,
+          dob: oacpData.dob,
+          address: oacpData.address,
+          email: oacpData.email,
+          phone: oacpData.phone,
+          declaration_date_iso: oacpData.declaration_date_iso,
+          applicant_signature_png_base64: oacpData.applicant_signature_png_base64,
+          declaration_acknowledged: oacpData.declaration_acknowledged,
+          verifier_enabled: oacpData.verifier_enabled,
+          verifier_name: oacpData.verifier_name,
+          verifier_title: oacpData.verifier_title,
+          verifier_phone: oacpData.verifier_phone,
+          verifier_date_iso: oacpData.verifier_date_iso,
+          verifier_signature_png_base64: oacpData.verifier_signature_png_base64,
+        })
+        .eq('id', logId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating log OACP fields:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update day with OACP-specific fields
+   */
+  async updateDayOacpFields(logId: string, date: string, oacpData: Partial<ExtendedFitnessLogDay>): Promise<void> {
+    try {
+      const existingDay = await this.getDay(logId, date);
+      
+      if (existingDay) {
+        // Update existing day
+        const { error } = await supabase
+          .from('fitness_log_days')
+          .update({
+            activity: oacpData.activity,
+            duration_mins: oacpData.duration_mins,
+            intensity: oacpData.intensity,
+            comments: oacpData.comments,
+            signer_initials: oacpData.signer_initials,
+            signed: oacpData.signed,
+          })
+          .eq('log_id', logId)
+          .eq('day_date', date);
+
+        if (error) throw error;
+      } else {
+        // Create new day entry with OACP fields
+        const { error } = await supabase
+          .from('fitness_log_days')
+          .insert({
+            log_id: logId,
+            day_date: date,
+            activity: oacpData.activity,
+            duration_mins: oacpData.duration_mins,
+            intensity: oacpData.intensity,
+            comments: oacpData.comments,
+            signer_initials: oacpData.signer_initials,
+            signed: oacpData.signed,
+          });
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error updating day OACP fields:', error);
       throw error;
     }
   }

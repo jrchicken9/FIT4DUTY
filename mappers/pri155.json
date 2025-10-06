@@ -1,0 +1,627 @@
+{
+  "meta": {
+    "instrument": "Psychological Readiness Inventory (PRI-75)",
+    "version": "1.0",
+    "format": "True/False",
+    "purpose": "Practice-only self-assessment inspired by occupational personality inventories used in policing. Not diagnostic.",
+    "disclaimer": "This is a practice self-assessment for personal insight. It is not a psychological test or diagnostic tool.",
+    "scoring_policy": "Each item has an adaptive_key indicating which response (T or F) earns 1 adaptive point.\nDomain scores are the sum of adaptive points for items in that domain, then scaled to 0–100 if desired.\nHigher scores indicate greater readiness in that domain.\nSuggested interpretation bands (per domain): 0–39 Needs Focus, 40–69 Developing, 70–100 Strong.\n"
+  },
+  "domains": [
+    {
+      "code": "EMO",
+      "name": "Emotional Stability & Stress Tolerance"
+    },
+    {
+      "code": "INT",
+      "name": "Integrity & Rule Adherence"
+    },
+    {
+      "code": "SOC",
+      "name": "Interpersonal & Social Functioning"
+    },
+    {
+      "code": "IMP",
+      "name": "Impulse Control & Discipline"
+    },
+    {
+      "code": "AUT",
+      "name": "Attitude Toward Authority & Responsibility"
+    },
+    {
+      "code": "RES",
+      "name": "Resilience & Self-Perception"
+    },
+    {
+      "code": "RTP",
+      "name": "Reality Testing & Perception"
+    },
+    {
+      "code": "WRK",
+      "name": "Work Habits & Motivation"
+    }
+  ],
+  "items": [
+    {
+      "id": 1,
+      "text": "I can stay calm even when someone is yelling at me.",
+      "domain": "EMO",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 2,
+      "text": "I sometimes lose my temper over small issues.",
+      "domain": "EMO",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 3,
+      "text": "I find it hard to stop thinking about mistakes I’ve made.",
+      "domain": "EMO",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 4,
+      "text": "I rarely feel anxious in stressful situations.",
+      "domain": "EMO",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 5,
+      "text": "I often feel tense without knowing why.",
+      "domain": "EMO",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 6,
+      "text": "When I’m under pressure, I still make clear decisions.",
+      "domain": "EMO",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 7,
+      "text": "I get upset easily when things don’t go my way.",
+      "domain": "EMO",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 8,
+      "text": "I have no trouble sleeping after a stressful day.",
+      "domain": "EMO",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 9,
+      "text": "I tend to bottle up my emotions instead of showing them.",
+      "domain": "EMO",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 10,
+      "text": "I sometimes feel like I’m constantly “on edge.”",
+      "domain": "EMO",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 11,
+      "text": "I believe following the rules is always important, even when no one is watching.",
+      "domain": "INT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 12,
+      "text": "I sometimes cut corners if I know I won’t get caught.",
+      "domain": "INT",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 13,
+      "text": "I feel guilty if I do something dishonest, even slightly.",
+      "domain": "INT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 14,
+      "text": "I have lied to protect myself from getting in trouble.",
+      "domain": "INT",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 15,
+      "text": "I think people exaggerate how important honesty is.",
+      "domain": "INT",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 16,
+      "text": "I have never stolen anything, even something small.",
+      "domain": "INT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 17,
+      "text": "I believe integrity is more important than popularity.",
+      "domain": "INT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 18,
+      "text": "I sometimes ignore small rules if they seem unnecessary.",
+      "domain": "INT",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 19,
+      "text": "I would report a coworker if I saw them doing something unethical.",
+      "domain": "INT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 20,
+      "text": "I believe that once trust is broken, it can rarely be repaired.",
+      "domain": "INT",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 21,
+      "text": "I enjoy being around people more than being alone.",
+      "domain": "SOC",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 22,
+      "text": "I find it difficult to approach strangers.",
+      "domain": "SOC",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 23,
+      "text": "I prefer to observe rather than participate in group discussions.",
+      "domain": "SOC",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 24,
+      "text": "I easily make friends wherever I go.",
+      "domain": "SOC",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 25,
+      "text": "I sometimes feel uncomfortable in large social gatherings.",
+      "domain": "SOC",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 26,
+      "text": "I often take the lead in group situations.",
+      "domain": "SOC",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 27,
+      "text": "I find it easy to get along with people who have different opinions.",
+      "domain": "SOC",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 28,
+      "text": "I sometimes say things I regret when arguing.",
+      "domain": "SOC",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 29,
+      "text": "I usually let others speak first in conversations.",
+      "domain": "SOC",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 30,
+      "text": "I enjoy working in teams more than working alone.",
+      "domain": "SOC",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 31,
+      "text": "I make decisions after thinking them through carefully.",
+      "domain": "IMP",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 32,
+      "text": "I sometimes act without thinking about the consequences.",
+      "domain": "IMP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 33,
+      "text": "I can stay focused on boring or repetitive tasks.",
+      "domain": "IMP",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 34,
+      "text": "I often change my mind suddenly about what I want to do.",
+      "domain": "IMP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 35,
+      "text": "I finish what I start, even if it becomes difficult.",
+      "domain": "IMP",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 36,
+      "text": "I occasionally say things impulsively and regret them later.",
+      "domain": "IMP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 37,
+      "text": "I find it hard to control my emotions when provoked.",
+      "domain": "IMP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 38,
+      "text": "I prefer a structured daily routine over spontaneity.",
+      "domain": "IMP",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 39,
+      "text": "I sometimes spend money impulsively.",
+      "domain": "IMP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 40,
+      "text": "I can stay patient even when progress is slow.",
+      "domain": "IMP",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 41,
+      "text": "I believe respect for authority is essential in any workplace.",
+      "domain": "AUT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 42,
+      "text": "I sometimes question authority if I think they are wrong.",
+      "domain": "AUT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 43,
+      "text": "I find it easy to follow orders even when I disagree.",
+      "domain": "AUT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 44,
+      "text": "I prefer to make my own rules rather than follow others’.",
+      "domain": "AUT",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 45,
+      "text": "I think it’s important to challenge unfair leadership.",
+      "domain": "AUT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 46,
+      "text": "I respect people who enforce rules fairly and consistently.",
+      "domain": "AUT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 47,
+      "text": "I sometimes feel irritated when someone tells me what to do.",
+      "domain": "AUT",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 48,
+      "text": "I believe discipline is necessary for success.",
+      "domain": "AUT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 49,
+      "text": "I would never lie to a superior, even to protect a friend.",
+      "domain": "AUT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 50,
+      "text": "I accept constructive criticism without taking it personally.",
+      "domain": "AUT",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 51,
+      "text": "I recover quickly after stressful situations.",
+      "domain": "RES",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 52,
+      "text": "I often doubt my ability to handle difficult tasks.",
+      "domain": "RES",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 53,
+      "text": "I believe I handle pressure better than most people.",
+      "domain": "RES",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 54,
+      "text": "I sometimes feel emotionally drained for no reason.",
+      "domain": "RES",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 55,
+      "text": "I find it easy to motivate myself after setbacks.",
+      "domain": "RES",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 56,
+      "text": "I tend to focus on problems rather than solutions.",
+      "domain": "RES",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 57,
+      "text": "I adapt well to sudden changes.",
+      "domain": "RES",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 58,
+      "text": "I sometimes feel that life is unfair to me.",
+      "domain": "RES",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 59,
+      "text": "I remain calm when others panic.",
+      "domain": "RES",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 60,
+      "text": "I often worry about things that might go wrong.",
+      "domain": "RES",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 61,
+      "text": "I sometimes hear my name when no one is around.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 62,
+      "text": "I believe some people have special powers others don’t.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 63,
+      "text": "I’ve felt that strangers were watching me in public places.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 64,
+      "text": "I’ve seen things others said they could not see.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 65,
+      "text": "I sometimes feel disconnected from reality, like in a dream.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 66,
+      "text": "I believe my thoughts can influence events around me.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 67,
+      "text": "I occasionally have difficulty knowing what is real and what isn’t.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 68,
+      "text": "I often feel people talk about me behind my back.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 69,
+      "text": "I believe coincidences often carry special meaning.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 70,
+      "text": "I’ve had experiences that I can’t fully explain to anyone.",
+      "domain": "RTP",
+      "adaptive_key": "F"
+    },
+    {
+      "id": 71,
+      "text": "I take pride in doing my work perfectly.",
+      "domain": "WRK",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 72,
+      "text": "I would rather complete a task late than rush it poorly.",
+      "domain": "WRK",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 73,
+      "text": "I feel comfortable working long hours when needed.",
+      "domain": "WRK",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 74,
+      "text": "I like to set personal goals and track my progress.",
+      "domain": "WRK",
+      "adaptive_key": "T"
+    },
+    {
+      "id": 75,
+      "text": "I believe commitment and perseverance matter more than natural talent.",
+      "domain": "WRK",
+      "adaptive_key": "T"
+    }
+  ],
+  "scoring": {
+    "method": "sum_adaptive_points_per_domain",
+    "scale": "0-100 optional scaling",
+    "domains": {
+      "EMO": {
+        "items": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      },
+      "INT": {
+        "items": [
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "SOC": {
+        "items": [
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30
+        ]
+      },
+      "IMP": {
+        "items": [
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40
+        ]
+      },
+      "AUT": {
+        "items": [
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50
+        ]
+      },
+      "RES": {
+        "items": [
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60
+        ]
+      },
+      "RTP": {
+        "items": [
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70
+        ]
+      },
+      "WRK": {
+        "items": [
+          71,
+          72,
+          73,
+          74,
+          75
+        ]
+      }
+    },
+    "scaling_formula": "percent = round(100 * (domain_score / domain_item_count), 0)",
+    "bands": [
+      {
+        "label": "Needs Focus",
+        "min": 0,
+        "max": 39
+      },
+      {
+        "label": "Developing",
+        "min": 40,
+        "max": 69
+      },
+      {
+        "label": "Strong",
+        "min": 70,
+        "max": 100
+      }
+    ]
+  }
+}
