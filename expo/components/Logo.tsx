@@ -21,10 +21,10 @@ export default function Logo({
     switch (size) {
       case 'small':
         return {
-          iconSize: 22,
-          fontSize: 18,
-          containerSize: 36,
-          spacing: 0,
+          iconSize: 20,
+          fontSize: 16,
+          containerSize: 32,
+          spacing: 8,
         };
       case 'large':
         return {
@@ -180,14 +180,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoText: {
-    fontWeight: '900',
-    letterSpacing: 3,
+    fontWeight: '800',
+    letterSpacing: 2,
     fontFamily: 'System',
-    textShadowColor: Colors.primary + '30',
+    textShadowColor: Colors.primary + '20',
     textShadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    textShadowRadius: 4,
+    textShadowRadius: 2,
   },
 });
